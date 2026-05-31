@@ -2,31 +2,25 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
-## v0.2.0: Profile Generation Foundation
-v0.2.0 keeps the full v0.1 diagnostic toolchain and adds safe profile generation from AutoEQ text files.
+## v0.2.1: HDA Hardware Quirk Audit
+v0.2.1 keeps all v0.2.0 profile generation capabilities and adds a read-only hardware quirk audit layer for HDA pin-routing edge cases.
 
-Pipeline in v0.2.0:
+## What v0.2.1 Does
+- Keeps all existing commands working: `version`, `doctor`, `devices`, `report`, `profile ...`.
+- Parses and validates AutoEQ parametric EQ files.
+- Generates PipeWire filter-chain config files without auto-installing them.
+- Adds read-only hardware commands:
+  - `pipetune hardware hda-audit`
+  - `pipetune hardware mic-audit`
+  - `pipetune hardware quirk-report`
+- Generates local HDA/microphone quirk documentation bundles under `docs/system-audits/erce-hda-pin-retask/`.
 
-AutoEQ Parametric EQ text
--> parse filters
--> validate safety and compatibility
--> create internal profile model
--> generate PipeWire filter-chain config text
--> write output file only
-
-## What v0.2.0 Does
-- Keeps all v0.1 commands working: `version`, `doctor`, `devices`, `report`.
-- Parses common AutoEQ parametric EQ text format.
-- Validates filter/preamp safety rules.
-- Generates PipeWire filter-chain configuration files in a local output directory.
-- Supports configurable output directory for generated files.
-
-## What v0.2.0 Does Not Do
+## What v0.2.1 Does Not Do
 - Does not modify system PipeWire/WirePlumber/ALSA configuration.
 - Does not write automatically to `~/.config/pipewire`.
-- Does not restart PipeWire.
-- Does not install or activate generated configs.
-- Does not run as a daemon/service.
+- Does not restart PipeWire/WirePlumber/ALSA.
+- Does not auto-apply HDA retask changes.
+- Does not install packages or run interactive retask tools.
 
 ## Installation
 ```bash
@@ -43,7 +37,7 @@ pipetune report
 pipetune report --output ./reports
 ```
 
-### New Profile Commands
+## Profile Commands
 ```bash
 pipetune profile parse examples/autoeq/sennheiser-hd650.txt
 pipetune profile validate examples/autoeq/sennheiser-hd650.txt
@@ -63,19 +57,25 @@ This sample is for parser/generator testing and documentation only; it is not an
 ### Generated Output Example
 - `generated/sennheiser-hd-650.filter-chain.conf`
 
-## Safety Statement
-PipeTune Linux v0.2.0 generates files only.
-It does not auto-install or activate PipeWire configs.
-No system configuration is modified by `pipetune profile generate`.
+## Hardware Quirk Audit Commands
+```bash
+pipetune hardware hda-audit
+pipetune hardware mic-audit
+pipetune hardware quirk-report
+```
 
-Why no auto-install yet:
-- PipeWire/WirePlumber deployment patterns vary across distros and user setups.
-- Safe generation-first reduces accidental breakage.
-- v0.2.0 focuses on deterministic parsing/validation/generation behavior.
+Use these commands when the machine has historical HDA pin-routing quirks (speaker/headphone switching anomalies, manual retask history, unreliable built-in microphone). The audit is read-only and designed to preserve current working output paths.
+Raw hardware audit captures are written under `docs/system-audits/.../raw/` locally and are gitignored by default.
+Public Markdown files (`README.md`, `FIX_PLAN.md`, `PUBLIC_SUMMARY.md`) are sanitized summaries intended for sharing.
+
+## Safety Statement
+PipeTune Linux v0.2.1 is non-destructive by default.
+It generates files and diagnostic reports but does not auto-install or auto-apply system audio changes.
+PipeTune does not send audit data anywhere and does not perform external network reporting.
 
 ## Roadmap
-- Current: v0.2.0 Profile Generation Foundation.
-- Next: v0.3 safe speaker/headphone profile generation and optional EasyEffects exporter.
+- Current: v0.2.1 HDA Hardware Quirk Audit.
+- Next: v0.3 safe speaker/headphone profile generation with hardware-quirk-aware guardrails.
 
 See [docs/roadmap.md](docs/roadmap.md).
 

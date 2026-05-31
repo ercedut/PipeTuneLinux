@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.2.1] - 2026-05-31
+### Added
+- New `pipetune hardware` command group with:
+  - `pipetune hardware hda-audit`
+  - `pipetune hardware mic-audit`
+  - `pipetune hardware quirk-report`
+- Read-only HDA quirk audit collector for codec files, pin-config visibility, and retask reference signals.
+- Read-only microphone route audit collector for ALSA/PipeWire source visibility and reliability warnings.
+- Local quirk-report bundle generation under `docs/system-audits/erce-hda-pin-retask/` with:
+  - command snapshots
+  - HDA pin/config captures
+  - `README.md`
+  - `FIX_PLAN.md`
+- New hardware quirk documentation in `docs/hardware-quirks.md`.
+- Test coverage for HDA audit logic, mic audit logic, and hardware CLI integration.
+- Sanitizer utilities for public hardware audit Markdown outputs.
+
+### Changed
+- Project version updated to `0.2.1`.
+- `pipetune version` codename updated to `HDA Hardware Quirk Audit`.
+- README and roadmap updated to include hardware quirk workflow and safety positioning.
+- HDA retask-reference search now uses Python standard library scanning (no `rg` dependency).
+- Quirk report output now separates public sanitized files from local-only raw captures under `raw/`.
+
 ## [0.2.0] - 2026-05-31
 ### Added
 - New `pipetune profile` command group with `parse`, `validate`, and `generate` subcommands.

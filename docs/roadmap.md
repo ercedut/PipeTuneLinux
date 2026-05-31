@@ -4,20 +4,29 @@
 - Read-only CLI diagnostics for PipeWire, WirePlumber, ALSA, Bluetooth, and EasyEffects.
 - Risk findings and report export (Markdown + JSON).
 
-## v0.2 - Profile Generation Foundation (Current)
+## v0.2 - Profile Generation Foundation (Done)
 - Parse AutoEQ-style parametric EQ text files.
 - Validate profile safety and compatibility.
 - Generate candidate PipeWire filter-chain configuration files.
 - File generation only: no auto-install, no restart, no system config mutation.
 
-## v0.3 - Safe Device Profile Expansion (Next)
+## v0.2.1 - HDA Hardware Quirk Audit (Current)
+- Add read-only HDA pin retask and microphone route audits.
+- Generate local hardware quirk report bundles for manual repair planning.
+- Explicitly avoid automatic hardware fixes or retask writes.
+- Establish guardrails so future profile features respect known hardware quirks.
+- Keep raw audit captures local-only and gitignored by default.
+- Publish only sanitized hardware audit Markdown summaries.
+
+## v0.3 - Safe Device Profile Expansion
 - Safe speaker/headphone profile generation workflow.
 - Optional EasyEffects exporter for generated profile data.
-- Additional compatibility guardrails and export validation.
+- Hardware-quirk-aware profile activation guardrails.
 
 ## v0.4 - Benchmark and Measurement Tooling
 - Repeatable command-line benchmarking and optional measurement collection helpers.
 - Comparative profile validation workflow.
+- Ensure calibration/measurement workflows refuse unreliable built-in mics on quirk machines.
 
 ## v0.5 - WirePlumber Helper
 - Session policy helper tooling for profile routing and policy diagnostics.

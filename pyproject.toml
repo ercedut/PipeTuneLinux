@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pipetune-linux"
-version = "0.2.0"
-description = "PipeTune Linux diagnostic and safe profile generation CLI"
+version = "0.2.1"
+description = "PipeTune Linux diagnostics, profile generation, and hardware quirk audit CLI"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [

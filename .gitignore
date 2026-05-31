@@ -1,20 +1,26 @@
 __pycache__/
+**/__pycache__/
 *.py[cod]
-*$py.class
-.venv/
-venv/
-env/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-dist/
-build/
 *.egg-info/
-.DS_Store
+.venv/
+.pytest_cache/
+
+# Generated reports
 reports/*.json
 reports/*.md
 !reports/.gitkeep
+
+# Generated PipeWire configs
 generated/*.conf
 !generated/.gitkeep
+
+# Local raw hardware audits
+docs/system-audits/**/raw/
+docs/system-audits/**/*.txt
+docs/system-audits/**/hda-codec-files/
+
+# Keep public/sanitized audit docs
+!docs/system-audits/**/README.md
+!docs/system-audits/**/FIX_PLAN.md
+!docs/system-audits/**/PUBLIC_SUMMARY.md
+!docs/system-audits/**/.gitkeep

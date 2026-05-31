@@ -8,6 +8,9 @@ from pathlib import Path
 from pipetune import CODENAME, __version__
 from pipetune.devices import collect_devices, render_devices_output
 from pipetune.doctor import render_doctor_summary, run_diagnostic
+from pipetune.hardware.hda_audit import collect_hda_audit, render_hda_audit_summary
+from pipetune.hardware.mic_audit import collect_mic_audit, render_mic_audit_summary
+from pipetune.hardware.quirk_report import DEFAULT_QUIRK_REPORT_DIR, create_quirk_report
 from pipetune.profile.autoeq_parser import parse_autoeq_file
 from pipetune.profile.pipewire_generator import write_generated_config
 from pipetune.profile.validator import validate_profile
@@ -56,6 +59,22 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("generated"),
         help="Output directory for generated config files (default: generated).",
+    )
+
+    hardware_parser = subparsers.add_parser("hardware", help="Run read-only hardware quirk audits.")
+    hardware_subparsers = hardware_parser.add_subparsers(dest="hardware_command")
+
+    hardware_subparsers.add_parser("hda-audit", help="Audit HDA codec/pin retask indicators.")
+    hardware_subparsers.add_parser("mic-audit", help="Audit microphone and capture route visibility.")
+
+    quirk_report_parser = hardware_subparsers.add_parser(
+        "quirk-report", help="Create a local hardware quirk documentation bundle."
+    )
+    quirk_report_parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_QUIRK_REPORT_DIR,
+        help=f"Output directory for the quirk report bundle (default: {DEFAULT_QUIRK_REPORT_DIR}).",
     )
 
     return parser
@@ -210,6 +229,34 @@ def _cmd_profile_generate(autoeq_file: Path, profile_name: str, output_dir: Path
     return 0
 
 
+def _cmd_hardware_hda_audit() -> int:
+    result = collect_hda_audit()
+    print(render_hda_audit_summary(result))
+    return 0
+
+
+def _cmd_hardware_mic_audit() -> int:
+    result = collect_mic_audit()
+    print(render_mic_audit_summary(result))
+    return 0
+
+
+def _cmd_hardware_quirk_report(output_dir: Path) -> int:
+    report = create_quirk_report(output_dir=output_dir)
+    print("Created hardware quirk report:")
+    print("")
+    print(f"* Public README: {report.readme_path}")
+    print(f"* Public summary: {report.public_summary_path}")
+    print(f"* Repair plan: {report.fix_plan_path}")
+    print(f"* Local raw audit directory: {report.raw_dir}/")
+    print("")
+    print("Privacy note:")
+    print("Raw audit files are local-only and gitignored by default.")
+    print("")
+    print("No system configuration was modified.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -229,6 +276,15 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_profile_validate(args.autoeq_file)
         if args.profile_command == "generate":
             return _cmd_profile_generate(args.autoeq_file, args.name, args.output)
+        parser.print_help()
+        return 1
+    if args.command == "hardware":
+        if args.hardware_command == "hda-audit":
+            return _cmd_hardware_hda_audit()
+        if args.hardware_command == "mic-audit":
+            return _cmd_hardware_mic_audit()
+        if args.hardware_command == "quirk-report":
+            return _cmd_hardware_quirk_report(args.output)
         parser.print_help()
         return 1
 
