@@ -14,6 +14,10 @@ from pipetune.hardware.quirk_report import DEFAULT_QUIRK_REPORT_DIR, create_quir
 from pipetune.profile.autoeq_parser import parse_autoeq_file
 from pipetune.profile.pipewire_generator import write_generated_config
 from pipetune.profile.validator import validate_profile
+from pipetune.repair.backup_plan import render_backup_plan
+from pipetune.repair.checklist import render_repair_checklist
+from pipetune.repair.hda_plan import build_repair_context, render_hda_plan
+from pipetune.repair.mic_test_plan import render_mic_test_plan
 from pipetune.reports.json_report import write_json_report
 from pipetune.reports.markdown_report import build_markdown_report
 
@@ -76,6 +80,13 @@ def _build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_QUIRK_REPORT_DIR,
         help=f"Output directory for the quirk report bundle (default: {DEFAULT_QUIRK_REPORT_DIR}).",
     )
+
+    repair_parser = subparsers.add_parser("repair", help="Print guided manual repair plans.")
+    repair_subparsers = repair_parser.add_subparsers(dest="repair_command")
+    repair_subparsers.add_parser("hda-plan", help="Print a guided manual HDA repair strategy.")
+    repair_subparsers.add_parser("backup-plan", help="Print manual backup commands for retask-related files.")
+    repair_subparsers.add_parser("mic-test-plan", help="Print a safe manual microphone verification plan.")
+    repair_subparsers.add_parser("checklist", help="Print a manual step-by-step repair checklist.")
 
     return parser
 
@@ -257,6 +268,27 @@ def _cmd_hardware_quirk_report(output_dir: Path) -> int:
     return 0
 
 
+def _cmd_repair_hda_plan() -> int:
+    context = build_repair_context()
+    print(render_hda_plan(context))
+    return 0
+
+
+def _cmd_repair_backup_plan() -> int:
+    print(render_backup_plan())
+    return 0
+
+
+def _cmd_repair_mic_test_plan() -> int:
+    print(render_mic_test_plan())
+    return 0
+
+
+def _cmd_repair_checklist() -> int:
+    print(render_repair_checklist())
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -285,6 +317,17 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_hardware_mic_audit()
         if args.hardware_command == "quirk-report":
             return _cmd_hardware_quirk_report(args.output)
+        parser.print_help()
+        return 1
+    if args.command == "repair":
+        if args.repair_command == "hda-plan":
+            return _cmd_repair_hda_plan()
+        if args.repair_command == "backup-plan":
+            return _cmd_repair_backup_plan()
+        if args.repair_command == "mic-test-plan":
+            return _cmd_repair_mic_test_plan()
+        if args.repair_command == "checklist":
+            return _cmd_repair_checklist()
         parser.print_help()
         return 1
 

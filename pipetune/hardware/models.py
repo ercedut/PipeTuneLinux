@@ -24,6 +24,8 @@ class HdaAuditResult:
     retask_reference_hits: list[str]
     retask_reference_search_errors: list[str]
     retask_reference_search_status: str
+    retask_files_scanned: int
+    retask_files_skipped: int
     alsa_cards_count: int
     alsa_capture_devices_count: int
     ucm2_directory_exists: bool

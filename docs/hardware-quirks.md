@@ -26,6 +26,7 @@ On quirk machines, use external USB or dedicated measurement microphones for fut
 - Raw captures may include machine-specific details and are gitignored by default.
 - Public Markdown summaries are sanitized before sharing.
 - PipeTune does not upload audit data anywhere.
+- Microphone capture tests are manual-only and never triggered automatically.
 
 ## Future Profile Metadata
 ```toml

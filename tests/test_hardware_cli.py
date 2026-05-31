@@ -24,6 +24,8 @@ def test_hardware_hda_audit_command_returns_success(monkeypatch) -> None:
         retask_reference_hits=[],
         retask_reference_search_errors=[],
         retask_reference_search_status="completed",
+        retask_files_scanned=0,
+        retask_files_skipped=0,
         alsa_cards_count=1,
         alsa_capture_devices_count=1,
         ucm2_directory_exists=True,

@@ -136,18 +136,21 @@ def test_retask_search_works_without_rg(monkeypatch, tmp_path: Path) -> None:
     # Ensure search implementation does not shell out.
     monkeypatch.setattr("pipetune.hardware.hda_audit.run_command", lambda *args, **kwargs: None, raising=False)
 
-    hits, warnings = _search_retask_references(modprobe)
+    hits, warnings, scanned, skipped = _search_retask_references(modprobe)
 
     assert warnings == []
     assert any("model=generic" in hit for hit in hits)
+    assert scanned >= 1
+    assert skipped >= 0
 
 
 def test_missing_search_directories_do_not_crash(tmp_path: Path) -> None:
     missing = tmp_path / "does-not-exist"
-    hits, warnings = _search_retask_references(missing)
+    hits, warnings, scanned, skipped = _search_retask_references(missing)
 
     assert hits == []
     assert any("missing" in warning for warning in warnings)
+    assert scanned == 0
 
 
 def test_unreadable_files_are_skipped_safely(tmp_path: Path, monkeypatch) -> None:
@@ -165,7 +168,51 @@ def test_unreadable_files_are_skipped_safely(tmp_path: Path, monkeypatch) -> Non
 
     monkeypatch.setattr(Path, "read_text", fake_read_text)
 
-    hits, warnings = _search_retask_references(modprobe)
+    hits, warnings, scanned, skipped = _search_retask_references(modprobe)
 
     assert hits == []
-    assert any("unreadable" in warning for warning in warnings)
+    assert warnings == []
+    assert scanned == 0
+    assert skipped >= 1
+
+
+def test_large_files_are_skipped(tmp_path: Path) -> None:
+    modprobe = tmp_path / "modprobe"
+    modprobe.mkdir(parents=True, exist_ok=True)
+    large_file = modprobe / "hda-jack-retask.conf"
+    large_file.write_text("x" * (1_000_001), encoding="utf-8")
+
+    hits, warnings, scanned, skipped = _search_retask_references(modprobe)
+
+    assert hits == []
+    assert warnings == []
+    assert scanned == 0
+    assert skipped >= 1
+
+
+def test_binary_like_files_are_skipped(tmp_path: Path) -> None:
+    firmware = tmp_path / "firmware"
+    firmware.mkdir(parents=True, exist_ok=True)
+    binary_file = firmware / "hda-jack-retask.fw"
+    binary_file.write_bytes(b"\x00\x01\x02hda-jack-retask\x03")
+
+    hits, warnings, scanned, skipped = _search_retask_references(firmware)
+
+    assert hits == []
+    assert warnings == []
+    assert scanned == 0
+    assert skipped >= 1
+
+
+def test_max_file_limit_stops_scanning(tmp_path: Path) -> None:
+    modprobe = tmp_path / "modprobe"
+    modprobe.mkdir(parents=True, exist_ok=True)
+    for index in range(10):
+        (modprobe / f"config-{index}.conf").write_text("no match\n", encoding="utf-8")
+
+    hits, warnings, scanned, skipped = _search_retask_references(modprobe, max_scanned_files=3)
+
+    assert hits == []
+    assert scanned <= 3
+    assert any("file scan limit" in warning for warning in warnings)
+    assert skipped >= 0

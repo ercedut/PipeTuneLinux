@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.2] - 2026-05-31
+### Added
+- New `pipetune repair` command group with:
+  - `pipetune repair hda-plan`
+  - `pipetune repair backup-plan`
+  - `pipetune repair mic-test-plan`
+  - `pipetune repair checklist`
+- Guided manual repair planning modules under `pipetune/repair/`.
+- New documentation:
+  - `docs/hda-repair-guide.md`
+  - `docs/microphone-repair-guide.md`
+- Test coverage for repair plan output and repair CLI behavior.
+
+### Changed
+- Project version updated to `0.2.2`.
+- `pipetune version` codename updated to `Guided HDA Repair Planning`.
+- README and roadmap updated for guided repair planning scope.
+
 ## [0.2.1] - 2026-05-31
 ### Added
 - New `pipetune hardware` command group with:

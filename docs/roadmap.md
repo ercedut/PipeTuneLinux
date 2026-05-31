@@ -10,13 +10,17 @@
 - Generate candidate PipeWire filter-chain configuration files.
 - File generation only: no auto-install, no restart, no system config mutation.
 
-## v0.2.1 - HDA Hardware Quirk Audit (Current)
+## v0.2.1 - HDA Hardware Quirk Audit (Done)
 - Add read-only HDA pin retask and microphone route audits.
 - Generate local hardware quirk report bundles for manual repair planning.
-- Explicitly avoid automatic hardware fixes or retask writes.
-- Establish guardrails so future profile features respect known hardware quirks.
 - Keep raw audit captures local-only and gitignored by default.
 - Publish only sanitized hardware audit Markdown summaries.
+
+## v0.2.2 - Guided HDA Repair Planning (Current)
+- Add manual-only repair planning commands for HDA issues.
+- Add backup-first and rollback-first planning outputs.
+- Add explicit microphone verification planning with user-approved recording language.
+- Keep all repair outputs non-destructive and read-only.
 
 ## v0.3 - Safe Device Profile Expansion
 - Safe speaker/headphone profile generation workflow.
