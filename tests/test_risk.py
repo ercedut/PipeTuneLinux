@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pipetune.risk import build_recommendations, evaluate_risks
+from pipetune.risk import HEALTHY_OPTIONAL_RECOMMENDATION, build_recommendations, evaluate_risks
 
 
 def _command_result(available: bool = True, exit_code: int = 0, stdout: str = "", stderr: str = "") -> dict:
@@ -150,3 +150,29 @@ def test_easyeffects_missing_low_only_without_higher_severity() -> None:
     degraded_findings = evaluate_risks(degraded)
     assert _has_code(degraded_findings, "no_default_source", "medium")
     assert not _has_code(degraded_findings, "easyeffects_missing", "low")
+
+
+def test_healthy_optional_only_uses_profile_generation_readiness_recommendation() -> None:
+    diagnostic = _base_diagnostic()
+    findings = evaluate_risks(diagnostic)
+
+    recommendations = build_recommendations(diagnostic, findings)
+
+    assert recommendations
+    assert recommendations[0] == HEALTHY_OPTIONAL_RECOMMENDATION
+
+
+def test_higher_severity_prevents_healthy_optional_recommendation() -> None:
+    diagnostic = _base_diagnostic()
+    diagnostic["pipewire"]["default_source"] = {
+        "detected": False,
+        "name": None,
+        "source": "unknown",
+        "explicitly_missing": False,
+    }
+    findings = evaluate_risks(diagnostic)
+
+    recommendations = build_recommendations(diagnostic, findings)
+
+    assert recommendations
+    assert recommendations[0] != HEALTHY_OPTIONAL_RECOMMENDATION

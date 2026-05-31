@@ -16,3 +16,5 @@ build/
 reports/*.json
 reports/*.md
 !reports/.gitkeep
+generated/*.conf
+!generated/.gitkeep

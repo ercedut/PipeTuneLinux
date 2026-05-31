@@ -1,25 +1,31 @@
 # PipeTune Linux
 
-PipeTune Linux is a read-only Linux audio diagnostic CLI focused on modern PipeWire-based systems.
+PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
-## Problem Statement
-Linux audio issues are often caused by stack mismatches, missing session services, profile mode conflicts, or device routing problems. Users need a safe baseline diagnostic before attempting enhancement or tuning.
+## v0.2.0: Profile Generation Foundation
+v0.2.0 keeps the full v0.1 diagnostic toolchain and adds safe profile generation from AutoEQ text files.
 
-## What v0.1.0 Does
-- Inspects PipeWire, pipewire-pulse, and WirePlumber service status.
-- Collects `pactl`, `wpctl`, `pw-dump`, and ALSA visibility.
-- Detects default sink/source when visible.
-- Detects Bluetooth audio card presence and profile hints.
-- Detects EasyEffects availability.
-- Evaluates conservative risk findings.
-- Generates terminal summary and exportable Markdown/JSON reports.
+Pipeline in v0.2.0:
 
-## What v0.1.0 Does Not Do
-- Does not modify system audio configuration.
-- Does not apply DSP or EQ.
-- Does not generate PipeWire filter-chain configurations.
-- Does not write WirePlumber/ALSA/PipeWire config files.
-- Does not require or invoke `sudo`.
+AutoEQ Parametric EQ text
+-> parse filters
+-> validate safety and compatibility
+-> create internal profile model
+-> generate PipeWire filter-chain config text
+-> write output file only
+
+## What v0.2.0 Does
+- Keeps all v0.1 commands working: `version`, `doctor`, `devices`, `report`.
+- Parses common AutoEQ parametric EQ text format.
+- Validates filter/preamp safety rules.
+- Generates PipeWire filter-chain configuration files in a local output directory.
+- Supports configurable output directory for generated files.
+
+## What v0.2.0 Does Not Do
+- Does not modify system PipeWire/WirePlumber/ALSA configuration.
+- Does not write automatically to `~/.config/pipewire`.
+- Does not restart PipeWire.
+- Does not install or activate generated configs.
 - Does not run as a daemon/service.
 
 ## Installation
@@ -37,17 +43,40 @@ pipetune report
 pipetune report --output ./reports
 ```
 
-## Example Report Paths
-- `reports/audio-diagnostic-report.md`
-- `reports/audio-diagnostic-report.json`
+### New Profile Commands
+```bash
+pipetune profile parse examples/autoeq/sennheiser-hd650.txt
+pipetune profile validate examples/autoeq/sennheiser-hd650.txt
+pipetune profile generate examples/autoeq/sennheiser-hd650.txt --name "Sennheiser HD 650"
+pipetune profile generate examples/autoeq/sennheiser-hd650.txt --name "Sennheiser HD 650" --output ./generated
+```
+
+### AutoEQ Input Example
+```text
+Preamp: -6.8 dB
+Filter 1: ON PK Fc 20 Hz Gain -1.3 dB Q 2.000
+Filter 2: ON PK Fc 31 Hz Gain -7.0 dB Q 0.500
+Filter 3: ON PK Fc 63 Hz Gain 2.1 dB Q 1.200
+```
+This sample is for parser/generator testing and documentation only; it is not an official manufacturer profile.
+
+### Generated Output Example
+- `generated/sennheiser-hd-650.filter-chain.conf`
 
 ## Safety Statement
-PipeTune Linux v0.1.0 is read-only.
-It does not modify system audio configuration.
-It does not apply DSP yet.
-It is the diagnostic foundation for future Linux audio enhancement work.
+PipeTune Linux v0.2.0 generates files only.
+It does not auto-install or activate PipeWire configs.
+No system configuration is modified by `pipetune profile generate`.
+
+Why no auto-install yet:
+- PipeWire/WirePlumber deployment patterns vary across distros and user setups.
+- Safe generation-first reduces accidental breakage.
+- v0.2.0 focuses on deterministic parsing/validation/generation behavior.
 
 ## Roadmap
+- Current: v0.2.0 Profile Generation Foundation.
+- Next: v0.3 safe speaker/headphone profile generation and optional EasyEffects exporter.
+
 See [docs/roadmap.md](docs/roadmap.md).
 
 ## Contribution Guide

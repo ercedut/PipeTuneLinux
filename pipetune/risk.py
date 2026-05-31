@@ -22,8 +22,13 @@ RECOMMENDATION_BY_CODE = {
     "no_playback_devices": "No playback device was detected. Verify hardware visibility and ALSA/PipeWire enumeration.",
     "no_capture_devices": "No capture device was detected. Verify microphone hardware visibility and ALSA/PipeWire enumeration.",
     "easyeffects_missing": "EasyEffects is optional. Install it only if you want manual DSP testing before future PipeTune profile generation.",
-    "no_filter_chain": "No PipeWire DSP filter-chain is active. This is normal for v0.1; future versions may generate safe filter-chain profiles.",
+    "no_filter_chain": "No PipeWire DSP filter-chain is active. This is normal by default; use 'pipetune profile generate' when you are ready to produce a candidate config file.",
 }
+
+HEALTHY_OPTIONAL_RECOMMENDATION = (
+    "Core audio routing is healthy. The system is ready for v0.2 profile generation experiments. "
+    "Optional tools such as EasyEffects can be installed later for manual DSP testing."
+)
 
 
 def _is_active_service(command_result: dict) -> bool:
@@ -228,6 +233,13 @@ def evaluate_risks(diagnostic: dict) -> list[RiskFinding]:
 
 
 def build_recommendations(diagnostic: dict, findings: list[RiskFinding]) -> list[str]:
+    low_codes = {finding.code for finding in findings if finding.severity == "low"}
+    has_critical_high_medium = any(finding.severity in {"critical", "high", "medium"} for finding in findings)
+    optional_low_codes = {"easyeffects_missing", "no_filter_chain"}
+
+    if not has_critical_high_medium and low_codes and low_codes.issubset(optional_low_codes):
+        return [HEALTHY_OPTIONAL_RECOMMENDATION]
+
     recommendations: list[str] = []
 
     for finding in findings:
