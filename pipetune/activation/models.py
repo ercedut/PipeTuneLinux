@@ -70,3 +70,37 @@ class RollbackResult:
     rollback_log_path: str | None
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class InstallIntegrity:
+    install_id: str
+    profile_id: str
+    profile_name: str
+    rollback_status: str
+    installed_at: str
+    installed_config_path: str
+    config_exists: bool
+    checksum_state: str
+    problems: list[str] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class StateDoctorReport:
+    manifest_path: str
+    config_directory: str
+    installed_count: int
+    active_count: int
+    rolled_back_count: int
+    missing_config_count: int
+    orphan_config_count: int
+    checksum_mismatch_count: int
+    duplicate_profile_count: int
+    corrupted_manifest_count: int
+    rolled_back_config_present_count: int
+    verdict: str
+    entries: list[InstallIntegrity] = field(default_factory=list)
+    orphan_configs: list[str] = field(default_factory=list)
+    corrupted_manifests: list[str] = field(default_factory=list)
+    duplicate_profiles: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)

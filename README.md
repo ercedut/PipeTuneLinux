@@ -2,10 +2,10 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
-## v0.3.0: Safe Profile Activation
-v0.3.0 adds conservative user-level profile installation and rollback for generated PipeWire filter-chain configs.
+## v0.3.1: Activation Hardening and State Integrity
+v0.3.1 hardens user-level profile activation state against duplicate installs, stale manifests, orphan configs, checksum mismatches, and invalid rollback IDs.
 
-## What v0.3.0 Does
+## What v0.3.1 Does
 - Keeps existing v0.1 through v0.2.5 commands working.
 - Installs generated profiles only into `~/.config/pipewire/pipewire.conf.d/`.
 - Requires `--user` and `--confirm-install` before writing user-level config.
@@ -13,8 +13,9 @@ v0.3.0 adds conservative user-level profile installation and rollback for genera
 - Creates backups before overwriting existing user-level config files.
 - Records install manifests with checksums.
 - Provides rollback, list, activation-status, and dry-run commands.
+- Adds `state-doctor`, `verify-install`, dry-run repair proposals, and safe rolled-back manifest cleanup.
 
-## What v0.3.0 Does Not Do
+## What v0.3.1 Does Not Do
 - Does not use sudo.
 - Does not write to `/etc`, `/lib`, `/sys`, `/proc`, or system audio configuration.
 - Does not restart PipeWire, WirePlumber, ALSA, or the system automatically.
@@ -58,6 +59,10 @@ systemctl --user restart pipewire pipewire-pulse wireplumber
 ```bash
 pipetune profile list-installed
 pipetune profile activation-status
+pipetune profile state-doctor
+pipetune profile verify-install <install_id>
+pipetune profile repair-state --dry-run
+pipetune profile cleanup-rolled-back --confirm-cleanup
 pipetune profile rollback --latest --confirm-rollback
 pipetune profile rollback <install_id> --confirm-rollback
 ```
@@ -70,7 +75,7 @@ pipetune profile rollback <install_id> --confirm-rollback
 - Mixer and hardware audit output can reveal device details; review output before sharing publicly.
 
 ## Roadmap
-- Current: v0.3.0 Safe Profile Activation.
+- Current: v0.3.1 Activation Hardening and State Integrity.
 - Next: v0.4 benchmark and measurement tooling.
 
 See [docs/roadmap.md](docs/roadmap.md).

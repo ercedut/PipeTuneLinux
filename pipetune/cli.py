@@ -8,7 +8,14 @@ from pathlib import Path
 from pipetune import CODENAME, __version__
 from pipetune.activation.installer import install_profile, render_install_dry_run, render_install_result, run_install_dry_run
 from pipetune.activation.rollback import render_rollback_result, rollback_profile
-from pipetune.activation.status import render_activation_status, render_installed_profiles
+from pipetune.activation.state import build_state_doctor_report, render_state_doctor_report
+from pipetune.activation.status import (
+    cleanup_rolled_back_manifests,
+    render_activation_status,
+    render_installed_profiles,
+    render_repair_state_dry_run,
+    render_verify_install,
+)
 from pipetune.devices import collect_devices, render_devices_output
 from pipetune.doctor import render_doctor_summary, run_diagnostic
 from pipetune.gain.gain_audit import collect_gain_audit, render_gain_audit
@@ -111,6 +118,16 @@ def _build_parser() -> argparse.ArgumentParser:
 
     profile_subparsers.add_parser("list-installed", help="List PipeTune-installed user-level profiles.")
     profile_subparsers.add_parser("activation-status", help="Show PipeTune profile activation status.")
+    profile_subparsers.add_parser("state-doctor", help="Check PipeTune activation state integrity.")
+
+    verify_install_parser = profile_subparsers.add_parser("verify-install", help="Verify one PipeTune install entry.")
+    verify_install_parser.add_argument("install_id")
+
+    repair_state_parser = profile_subparsers.add_parser("repair-state", help="Propose activation state repair actions.")
+    repair_state_parser.add_argument("--dry-run", action="store_true", help="Required; propose actions without modifying files.")
+
+    cleanup_parser = profile_subparsers.add_parser("cleanup-rolled-back", help="Remove safe rolled-back manifest entries.")
+    cleanup_parser.add_argument("--confirm-cleanup", action="store_true", help="Required to remove safe rolled-back manifests.")
 
     rollback_parser = profile_subparsers.add_parser("rollback", help="Rollback a PipeTune-installed profile.")
     rollback_parser.add_argument("install_id", nargs="?")
@@ -367,6 +384,36 @@ def _cmd_profile_activation_status() -> int:
     return 0
 
 
+def _cmd_profile_state_doctor() -> int:
+    print(render_state_doctor_report(build_state_doctor_report()))
+    return 0
+
+
+def _cmd_profile_verify_install(install_id: str) -> int:
+    output, exit_code = render_verify_install(install_id)
+    print(output)
+    return exit_code
+
+
+def _cmd_profile_repair_state(dry_run: bool) -> int:
+    if not dry_run:
+        print("PipeTune Profile State Repair")
+        print("")
+        print("Repair refused:")
+        print("* repair-state currently supports --dry-run only.")
+        print("")
+        print("No system configuration was modified.")
+        return 1
+    print(render_repair_state_dry_run())
+    return 0
+
+
+def _cmd_profile_cleanup_rolled_back(confirm_cleanup: bool) -> int:
+    output, exit_code = cleanup_rolled_back_manifests(confirm_cleanup=confirm_cleanup)
+    print(output)
+    return exit_code
+
+
 def _cmd_profile_rollback(install_id: str | None, latest: bool, confirm_rollback: bool) -> int:
     result = rollback_profile(install_id=install_id, latest=latest, confirm_rollback=confirm_rollback)
     print(render_rollback_result(result))
@@ -518,6 +565,14 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_profile_list_installed()
         if args.profile_command == "activation-status":
             return _cmd_profile_activation_status()
+        if args.profile_command == "state-doctor":
+            return _cmd_profile_state_doctor()
+        if args.profile_command == "verify-install":
+            return _cmd_profile_verify_install(args.install_id)
+        if args.profile_command == "repair-state":
+            return _cmd_profile_repair_state(args.dry_run)
+        if args.profile_command == "cleanup-rolled-back":
+            return _cmd_profile_cleanup_rolled_back(args.confirm_cleanup)
         if args.profile_command == "rollback":
             return _cmd_profile_rollback(args.install_id, args.latest, args.confirm_rollback)
         parser.print_help()

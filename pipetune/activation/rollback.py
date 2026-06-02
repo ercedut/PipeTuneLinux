@@ -9,9 +9,10 @@ import shutil
 
 from pipetune.activation.backup import atomic_copy
 from pipetune.activation.installer import MANUAL_RESTART_COMMAND
-from pipetune.activation.manifest import list_install_manifests, load_install_manifest, sha256_file, write_install_manifest
+from pipetune.activation.manifest import list_install_manifests, sha256_file, write_install_manifest
 from pipetune.activation.models import InstallManifest, RollbackResult
 from pipetune.activation.paths import is_within_directory, rollback_log_dir, user_pipewire_config_dir
+from pipetune.activation.state import find_install_manifest
 
 
 def rollback_profile(*, install_id: str | None = None, latest: bool = False, confirm_rollback: bool = False) -> RollbackResult:
@@ -25,17 +26,18 @@ def rollback_profile(*, install_id: str | None = None, latest: bool = False, con
         if selected is not None:
             manifest_path, manifest = selected
     elif install_id:
-        for path, candidate in list_install_manifests():
-            if candidate.install_id == install_id:
-                manifest_path, manifest = path, candidate
-                break
+        selected = find_install_manifest(install_id)
+        if selected is not None:
+            manifest_path, manifest = selected
     else:
         return _failed(["Rollback requires an install ID or --latest."])
 
     if manifest_path is None or manifest is None:
+        if install_id:
+            return _failed([f"Unknown install ID: {install_id}"])
         return _failed(["Install manifest not found."])
     if manifest.rollback_status != "active":
-        return _failed([f"Install {manifest.install_id} is not active."])
+        return _failed([f"Install {manifest.install_id} is already rolled back."])
 
     installed_path = Path(manifest.installed_config_path)
     if not _is_pipetune_owned_install_path(installed_path):

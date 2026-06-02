@@ -53,3 +53,18 @@ def list_install_manifests() -> list[tuple[Path, InstallManifest]]:
         if manifest is not None:
             manifests.append((path, manifest))
     return manifests
+
+
+def list_manifest_files() -> list[Path]:
+    directory = install_state_dir()
+    if not directory.exists():
+        return []
+    return sorted(directory.glob("*.json"))
+
+
+def delete_install_manifest(install_id: str) -> bool:
+    path = install_manifest_path(install_id)
+    if not path.exists():
+        return False
+    path.unlink()
+    return True

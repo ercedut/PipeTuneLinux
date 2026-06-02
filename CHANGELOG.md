@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.1] - 2026-06-02
+### Added
+- Duplicate active install protection for profile install.
+- New `pipetune profile state-doctor` command for activation state integrity reports.
+- New `pipetune profile verify-install <install_id>` command.
+- New `pipetune profile repair-state --dry-run` command.
+- New `pipetune profile cleanup-rolled-back --confirm-cleanup` command.
+- State integrity checks for missing configs, orphan configs, checksum mismatches, duplicate active profiles, corrupted manifests, and rolled-back configs still present.
+
+### Changed
+- Project version updated to `0.3.1`.
+- `pipetune version` codename updated to `Activation Hardening and State Integrity`.
+- `pipetune profile list-installed` now reports profile ID, config existence, checksum state, status, and install time.
+- `pipetune profile activation-status` now reports integrity counts and explicit warnings.
+- Rollback errors are clearer for unknown IDs and already rolled-back IDs.
+
+### Safety
+- Duplicate installs are refused instead of creating redundant manifests.
+- Rollback continues to refuse checksum mismatches.
+- `repair-state` is dry-run only and modifies nothing.
+- `cleanup-rolled-back` removes only rolled-back manifest entries whose config files are absent.
+
 ## [0.3.0] - 2026-06-02
 ### Added
 - New `pipetune profile dry-run-install <generated_config_file> --user` command.

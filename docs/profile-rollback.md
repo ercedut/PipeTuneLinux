@@ -45,6 +45,16 @@ Rollback refuses when:
 - the filename is not PipeTune-owned
 - the checksum does not match
 - the install is already rolled back
+- the install ID is unknown
 
 ## 7. What Rollback Will Not Remove
 Rollback will not remove arbitrary files, system files, non-PipeTune user config files, or files whose checksum no longer matches the manifest.
+
+## 8. State Cleanup
+v0.3.1 adds:
+
+```bash
+pipetune profile cleanup-rolled-back --confirm-cleanup
+```
+
+This removes only manifest entries that are already `rolled_back` and whose config files are absent. It does not delete active configs.

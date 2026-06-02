@@ -63,6 +63,17 @@ The user decides whether and when to run it.
 ## 9. Rollback Behavior
 Rollback removes only PipeTune-owned installed config files whose paths and checksums match the install manifest. If a backup exists, it is restored. Rollback logs are stored under `~/.local/share/pipetune/rollback-log/`.
 
+v0.3.1 also adds state integrity checks:
+
+```bash
+pipetune profile state-doctor
+pipetune profile verify-install <install_id>
+pipetune profile repair-state --dry-run
+pipetune profile cleanup-rolled-back --confirm-cleanup
+```
+
+`repair-state` is dry-run only. It proposes cleanup actions but does not modify files.
+
 ## 10. What v0.3.0 Does Not Do
 - Does not use sudo.
 - Does not install system-level configuration.
@@ -94,4 +105,11 @@ Rollback latest install:
 
 ```bash
 pipetune profile rollback --latest --confirm-rollback
+```
+
+Check activation state:
+
+```bash
+pipetune profile state-doctor
+pipetune profile activation-status
 ```

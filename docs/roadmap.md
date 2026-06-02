@@ -41,13 +41,19 @@
 - Decide whether future activation is ready, requires confirmation, blocked, or unknown.
 - Keep all behavior preflight-only: no install, no activation, no PipeWire config writes.
 
-## v0.3.0 - Safe Profile Activation (Current)
+## v0.3.0 - Safe Profile Activation (Done)
 - Safe user-level profile installation workflow with explicit confirmation.
 - Backup existing user-level config before overwrite.
 - Record install manifests and checksums.
 - Add rollback, list-installed, dry-run-install, and activation-status commands.
 - Hardware-quirk-aware profile activation guardrails.
 - No daemon, GUI, auto-switching, system-level install, or automatic service restart.
+
+## v0.3.1 - Activation Hardening and State Integrity (Current)
+- Refuse duplicate active profile installs.
+- Detect stale manifests, orphan configs, checksum mismatches, duplicate active profiles, and rolled-back configs still present.
+- Add state-doctor, verify-install, repair-state dry-run, and cleanup-rolled-back commands.
+- Keep repair-state non-mutating until a future explicit confirmed repair flow exists.
 
 ## v0.4 - Benchmark and Measurement Tooling
 - Repeatable command-line benchmarking and optional measurement collection helpers.

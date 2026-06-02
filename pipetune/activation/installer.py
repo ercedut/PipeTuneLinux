@@ -12,6 +12,7 @@ from pipetune.activation.backup import atomic_copy, create_backup_if_needed
 from pipetune.activation.manifest import sha256_file, write_install_manifest
 from pipetune.activation.models import InstallDryRun, InstallManifest, InstallResult
 from pipetune.activation.paths import ensure_runtime_dirs, install_state_dir, is_within_directory, user_pipewire_config_dir
+from pipetune.activation.state import active_duplicate_for
 from pipetune.safety.manifest import load_manifest_for_config
 from pipetune.safety.preflight import run_profile_preflight
 
@@ -97,6 +98,17 @@ def install_profile(
     profile_name = str(profile.get("profile_name") or config_file.stem)
     profile_id = safe_profile_id(str(profile.get("profile_id") or profile_name))
     destination = destination_for_profile(profile_id)
+    source_hash = sha256_file(config_file)
+
+    duplicate = active_duplicate_for(profile_id, source_hash)
+    if duplicate is not None:
+        return _failed(
+            [
+                f"Profile is already installed and active: {duplicate.install_id}",
+                "Duplicate install refused; existing active manifest remains unchanged.",
+            ],
+            preflight_status=preflight_status,
+        )
 
     if not is_within_directory(destination, user_pipewire_config_dir()):
         return _failed(["Destination path is outside the user-level PipeWire config directory."])
@@ -105,7 +117,6 @@ def install_profile(
     backup_path = create_backup_if_needed(destination)
     atomic_copy(config_file, destination)
 
-    source_hash = sha256_file(config_file)
     installed_hash = sha256_file(destination)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     install_id = f"{timestamp}-{profile_id}"
