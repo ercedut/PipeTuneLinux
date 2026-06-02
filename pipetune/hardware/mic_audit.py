@@ -15,16 +15,62 @@ _INTERNAL_MIC_HINTS = [
 ]
 
 
+_SOURCE_BLOCK_RE = re.compile(r"(?m)^Source #\d+\b")
+
+
 def _extract_capture_device_count(text: str) -> int:
     return sum(1 for line in text.splitlines() if "card " in line.lower())
 
 
-def _extract_source_count_from_short(text: str) -> int:
-    count = 0
+def _is_monitor_source(name: str) -> bool:
+    lowered = name.lower()
+    return "monitor" in lowered or ".monitor" in lowered
+
+
+def _is_input_source(name: str) -> bool:
+    lowered = name.lower()
+    return "alsa_input" in lowered or "bluez_input" in lowered or "input" in lowered
+
+
+def _classify_source_names(names: list[str]) -> tuple[int, int, int]:
+    total = len(names)
+    monitor = sum(1 for name in names if _is_monitor_source(name))
+    input_count = sum(1 for name in names if not _is_monitor_source(name) and _is_input_source(name))
+    return input_count, monitor, total
+
+
+def _extract_source_counts_from_short(text: str) -> tuple[int, int, int] | None:
+    names: list[str] = []
     for line in text.splitlines():
-        if line.strip() and not line.lower().startswith("source"):
-            count += 1
-    return count
+        stripped = line.strip()
+        if not stripped or stripped.lower().startswith("source"):
+            continue
+        parts = stripped.split()
+        if len(parts) >= 2 and parts[0].isdigit():
+            names.append(parts[1])
+    if not names:
+        return None
+    return _classify_source_names(names)
+
+
+def _extract_source_counts_from_long(text: str) -> tuple[int, int, int] | None:
+    blocks = re.split(r"\n(?=Source #\d+\b)", text.strip())
+    names: list[str] = []
+    saw_source_block = False
+    for block in blocks:
+        if not _SOURCE_BLOCK_RE.search(block):
+            continue
+        saw_source_block = True
+        for line in block.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("Name:"):
+                name = stripped.split(":", 1)[1].strip()
+                if name:
+                    names.append(name)
+                break
+    if not names and saw_source_block:
+        return None
+    return _classify_source_names(names)
 
 
 def _extract_default_source_from_pactl_info(text: str) -> str | None:
@@ -95,10 +141,6 @@ def collect_mic_audit() -> MicAuditResult:
     if arecord_list.available and arecord_list.exit_code == 0:
         capture_count = _extract_capture_device_count(arecord_list.stdout)
 
-    source_count: int | None = None
-    if pactl_sources_short.available and pactl_sources_short.exit_code == 0:
-        source_count = _extract_source_count_from_short(pactl_sources_short.stdout)
-
     default_source: str | None = None
     if pactl_default_source.available and pactl_default_source.exit_code == 0:
         for line in pactl_default_source.stdout.splitlines():
@@ -110,6 +152,25 @@ def collect_mic_audit() -> MicAuditResult:
     if not default_source and pactl_info.available and pactl_info.exit_code == 0:
         default_source = _extract_default_source_from_pactl_info(pactl_info.stdout)
 
+    source_counts: tuple[int, int, int] | None = None
+    if pactl_sources_short.available and pactl_sources_short.exit_code == 0:
+        source_counts = _extract_source_counts_from_short(pactl_sources_short.stdout)
+    if source_counts is None and pactl_sources.available and pactl_sources.exit_code == 0:
+        source_counts = _extract_source_counts_from_long(pactl_sources.stdout)
+
+    input_sources_count: int | None = None
+    monitor_sources_count: int | None = None
+    total_sources_count: int | None = None
+    if source_counts is not None:
+        input_sources_count, monitor_sources_count, total_sources_count = source_counts
+
+    if default_source and total_sources_count == 0:
+        input_sources_count = None
+        monitor_sources_count = None
+        total_sources_count = None
+
+    source_count: int | None = total_sources_count
+
     muted, state = _extract_default_source_state(
         pactl_sources.stdout if pactl_sources.available and pactl_sources.exit_code == 0 else "",
         default_source,
@@ -120,9 +181,9 @@ def collect_mic_audit() -> MicAuditResult:
         pactl_sources.stdout if pactl_sources.available and pactl_sources.exit_code == 0 else "",
     )
 
-    if capture_count > 0 or (source_count is not None and source_count > 0):
+    if capture_count > 0 or (input_sources_count is not None and input_sources_count > 0):
         microphone_status = "visible"
-    elif source_count == 0 or (not arecord_list.available and not pactl_sources_short.available):
+    elif total_sources_count == 0 or (not arecord_list.available and not pactl_sources_short.available):
         microphone_status = "unavailable"
     else:
         microphone_status = "unknown"
@@ -151,6 +212,9 @@ def collect_mic_audit() -> MicAuditResult:
         microphone_status=microphone_status,
         safety_recommendation="Capture route visible does not prove microphone functionality. Run a manual user-approved capture test outside PipeTune if needed.",
         warnings=warnings,
+        input_sources_count=input_sources_count,
+        monitor_sources_count=monitor_sources_count,
+        total_sources_count=total_sources_count,
     )
 
 
@@ -163,18 +227,40 @@ def render_mic_audit_summary(result: MicAuditResult) -> str:
     lines = [
         "PipeTune Microphone Audit",
         f"- ALSA capture devices: {result.alsa_capture_devices_count}",
-        f"- PipeWire/Pulse sources: {result.source_count if result.source_count is not None else 'unknown'}",
-        f"- Default source: {result.default_source or 'unknown'}",
-        f"- Default source route flags: {source_flags}",
-        f"- Internal mic route visible: {result.internal_mic_route_visible}",
-        f"- Capture test performed: {'yes' if result.capture_test_performed else 'no'}",
-        f"- Microphone status: {result.microphone_status}",
-        f"- Safety recommendation: {result.safety_recommendation}",
     ]
+
+    known_total = result.total_sources_count if result.total_sources_count is not None else result.source_count
+    if known_total is None and result.default_source:
+        lines.append("- PipeWire/Pulse sources: unknown (default source is visible)")
+    else:
+        lines.extend(
+            [
+                "- PipeWire/Pulse sources:",
+                f"  - Input sources: {_count_label(result.input_sources_count)}",
+                f"  - Monitor sources: {_count_label(result.monitor_sources_count)}",
+                f"  - Total sources: {_count_label(known_total)}",
+            ]
+        )
+
+    lines.extend(
+        [
+            f"- Default source: {result.default_source or 'unknown'}",
+            f"- Default source route flags: {source_flags}",
+            f"- Internal mic route visible: {result.internal_mic_route_visible}",
+            f"- Capture test performed: {'yes' if result.capture_test_performed else 'no'}",
+            f"- Microphone status: {result.microphone_status}",
+            f"- Safety recommendation: {result.safety_recommendation}",
+        ]
+    )
 
     if result.warnings:
         lines.append("- Warnings:")
         for warning in result.warnings:
             lines.append(f"  - {warning}")
 
+    lines.extend(["", "No system configuration was modified."])
     return "\n".join(lines)
+
+
+def _count_label(value: int | None) -> str:
+    return str(value) if value is not None else "unknown"

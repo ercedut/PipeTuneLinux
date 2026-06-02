@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 import wave
 
+from pipetune.gain.gain_recommendations import recommendation_for_status
 from pipetune.verify.models import MicAnalysisResult
 
 DEFAULT_VERIFICATION_DIR = Path("verification/microphone")
@@ -195,19 +196,7 @@ def render_analysis_summary(result: MicAnalysisResult) -> str:
         "Interpretation:",
     ]
 
-    if result.status == "invalid_file":
-        lines.append("- The WAV file could not be analyzed. Provide a valid PCM WAV file.")
-    elif result.status == "signal_detected":
-        lines.append("- A signal was detected. This suggests the selected capture route is functional.")
-        lines.append("- This is not calibration-grade measurement.")
-    elif result.status == "silence_likely":
-        lines.append("- Signal appears silent or near-silent. Capture route may be present but input signal is weak/unavailable.")
-        lines.append("- This is not calibration-grade measurement.")
-    elif result.status == "clipping_detected":
-        lines.append("- Signal clipping was detected. Input gain or signal path may be too hot.")
-        lines.append("- This is not calibration-grade measurement.")
-    else:
-        lines.append("- Microphone status remains unknown from this file.")
+    lines.extend(f"- {message}" for message in recommendation_for_status(result.status))
 
     lines.extend(["", "No system configuration was modified."])
     return "\n".join(lines)

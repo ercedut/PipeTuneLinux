@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pipetune-linux"
-version = "0.2.3"
-description = "PipeTune Linux diagnostics, profile generation, hardware quirk audit, repair planning, and explicit microphone verification CLI"
+version = "0.2.4"
+description = "PipeTune Linux diagnostics, profile generation, hardware quirk audit, repair planning, microphone verification, and capture gain audit CLI"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [

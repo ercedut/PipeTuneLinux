@@ -22,11 +22,17 @@
 - Add explicit microphone verification planning with user-approved recording language.
 - Keep all repair outputs non-destructive and read-only.
 
-## v0.2.3 - Explicit Microphone Verification (Current)
+## v0.2.3 - Explicit Microphone Verification (Done)
 - Add explicit user-approved microphone recording verification commands.
 - Analyze local WAV captures and classify signal/silence/clipping safely.
 - Keep recordings local-only and gitignored.
 - Do not repair microphone routing automatically.
+
+## v0.2.4 - Capture Gain State Audit (Current)
+- Add read-only capture gain audit for Pulse/PipeWire source volume, mute state, wpctl volume, and ALSA card 0 mixer controls.
+- Interpret clipping, silence, and usable signal as gain-staging evidence without claiming permanent repair.
+- Print manual-only gain tuning plans and test matrices.
+- Keep all commands non-destructive: no mixer changes, no service restarts, no ALSA state storage.
 
 ## v0.3 - Safe Device Profile Expansion
 - Safe speaker/headphone profile generation workflow.

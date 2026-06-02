@@ -47,3 +47,6 @@ class MicAuditResult:
     microphone_status: str
     safety_recommendation: str
     warnings: list[str] = field(default_factory=list)
+    input_sources_count: int | None = None
+    monitor_sources_count: int | None = None
+    total_sources_count: int | None = None

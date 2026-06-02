@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.4] - 2026-06-02
+### Added
+- New `pipetune hardware gain-audit` command for read-only capture gain state inspection.
+- New `pipetune repair gain-plan` command for manual-only gain tuning guidance.
+- New `pipetune repair gain-matrix` command for structured manual capture baseline testing.
+- New modular gain package under `pipetune/gain/` with parsers, models, audit collection, and recommendations.
+- New documentation:
+  - `docs/capture-gain-audit.md`
+
+### Changed
+- Project version updated to `0.2.4`.
+- `pipetune version` codename updated to `Capture Gain State Audit`.
+- `pipetune verify mic-analyze` now prints richer clipping, silence, and signal interpretation.
+- `pipetune verify mic-status` now includes a suggested next action from the latest safe status summary.
+- README, roadmap, microphone verification, and microphone repair docs updated for capture gain audit workflow.
+
+### Safety
+- Gain audit and repair outputs are read-only.
+- PipeTune does not change ALSA/PipeWire/WirePlumber/HDA settings.
+- PipeTune prints manual commands only and warns against storing ALSA state before stable values are confirmed.
+
 ## [0.2.3] - 2026-05-31
 ### Added
 - New `pipetune verify` command group with:

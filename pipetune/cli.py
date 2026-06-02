@@ -8,6 +8,8 @@ from pathlib import Path
 from pipetune import CODENAME, __version__
 from pipetune.devices import collect_devices, render_devices_output
 from pipetune.doctor import render_doctor_summary, run_diagnostic
+from pipetune.gain.gain_audit import collect_gain_audit, render_gain_audit
+from pipetune.gain.gain_recommendations import render_gain_matrix, render_gain_plan
 from pipetune.hardware.hda_audit import collect_hda_audit, render_hda_audit_summary
 from pipetune.hardware.mic_audit import collect_mic_audit, render_mic_audit_summary
 from pipetune.hardware.quirk_report import DEFAULT_QUIRK_REPORT_DIR, create_quirk_report
@@ -74,6 +76,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     hardware_subparsers.add_parser("hda-audit", help="Audit HDA codec/pin retask indicators.")
     hardware_subparsers.add_parser("mic-audit", help="Audit microphone and capture route visibility.")
+    hardware_subparsers.add_parser("gain-audit", help="Audit read-only capture gain state.")
 
     quirk_report_parser = hardware_subparsers.add_parser(
         "quirk-report", help="Create a local hardware quirk documentation bundle."
@@ -90,6 +93,8 @@ def _build_parser() -> argparse.ArgumentParser:
     repair_subparsers.add_parser("hda-plan", help="Print a guided manual HDA repair strategy.")
     repair_subparsers.add_parser("backup-plan", help="Print manual backup commands for retask-related files.")
     repair_subparsers.add_parser("mic-test-plan", help="Print a safe manual microphone verification plan.")
+    repair_subparsers.add_parser("gain-plan", help="Print a manual capture gain tuning plan.")
+    repair_subparsers.add_parser("gain-matrix", help="Print a manual capture gain test matrix.")
     repair_subparsers.add_parser("checklist", help="Print a manual step-by-step repair checklist.")
 
     verify_parser = subparsers.add_parser("verify", help="Explicit verification workflows.")
@@ -277,6 +282,12 @@ def _cmd_hardware_mic_audit() -> int:
     return 0
 
 
+def _cmd_hardware_gain_audit() -> int:
+    result = collect_gain_audit()
+    print(render_gain_audit(result))
+    return 0
+
+
 def _cmd_hardware_quirk_report(output_dir: Path) -> int:
     report = create_quirk_report(output_dir=output_dir)
     print("Created hardware quirk report:")
@@ -306,6 +317,16 @@ def _cmd_repair_backup_plan() -> int:
 
 def _cmd_repair_mic_test_plan() -> int:
     print(render_mic_test_plan())
+    return 0
+
+
+def _cmd_repair_gain_plan() -> int:
+    print(render_gain_plan(collect_gain_audit()))
+    return 0
+
+
+def _cmd_repair_gain_matrix() -> int:
+    print(render_gain_matrix())
     return 0
 
 
@@ -376,6 +397,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_hardware_hda_audit()
         if args.hardware_command == "mic-audit":
             return _cmd_hardware_mic_audit()
+        if args.hardware_command == "gain-audit":
+            return _cmd_hardware_gain_audit()
         if args.hardware_command == "quirk-report":
             return _cmd_hardware_quirk_report(args.output)
         parser.print_help()
@@ -387,6 +410,10 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_repair_backup_plan()
         if args.repair_command == "mic-test-plan":
             return _cmd_repair_mic_test_plan()
+        if args.repair_command == "gain-plan":
+            return _cmd_repair_gain_plan()
+        if args.repair_command == "gain-matrix":
+            return _cmd_repair_gain_matrix()
         if args.repair_command == "checklist":
             return _cmd_repair_checklist()
         parser.print_help()

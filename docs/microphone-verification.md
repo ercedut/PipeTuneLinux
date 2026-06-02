@@ -1,4 +1,4 @@
-# Microphone Verification in PipeTune v0.2.3
+# Microphone Verification in PipeTune v0.2.4
 
 ## 1. Purpose
 Provide explicit, user-approved microphone verification without automatically changing system configuration.
@@ -18,6 +18,7 @@ pipetune verify mic-plan
 pipetune verify mic-capture --duration 5 --confirm-recording
 pipetune verify mic-analyze <wav_file>
 pipetune verify mic-status
+pipetune hardware gain-audit
 ```
 
 ## 5. How to Run a Safe Capture Test
@@ -33,17 +34,22 @@ pipetune verify mic-analyze verification/microphone/mic-test-YYYYMMDD-HHMMSS.wav
 ```
 
 ## 7. How to Interpret Results
-- `signal_detected`: capture route likely functional.
-- `silence_likely`: weak or silent signal likely.
-- `clipping_detected`: signal may be too hot/clipped.
+- `signal_detected`: a usable signal was detected; document current gain state before persistence.
+- `silence_likely`: weak or near-silent signal; if a previous test clipped, inspect ALSA gain staging before assuming a dead microphone.
+- `clipping_detected`: signal clipping was detected; lower ALSA Capture, Mic Boost, or Digital gain before lowering only Pulse volume.
 - `invalid_file`: WAV could not be parsed safely.
 
 This is not calibration-grade quality scoring.
 
-## 8. What PipeTune Does Not Do
+## 8. Capture Gain Audit
+Use `pipetune hardware gain-audit` to inspect current gain state without modifying anything. The audit is local and may show device-specific mixer names, so review output before sharing publicly.
+
+## 9. What PipeTune Does Not Do
 - Does not fix microphone routing automatically.
 - Does not restart audio services.
 - Does not edit ALSA/PipeWire/WirePlumber configuration.
+- Does not change Capture, Mic Boost, Digital, or Pulse/PipeWire volume automatically.
+- Does not run `sudo alsactl store`.
 
-## 9. How This Helps Future HDA/Mic Repair
+## 10. How This Helps Future HDA/Mic Repair
 It provides explicit evidence for route validation before manual repair decisions in HDA/UCM/WirePlumber workflows.
