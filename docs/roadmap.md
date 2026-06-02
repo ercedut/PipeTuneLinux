@@ -16,11 +16,17 @@
 - Keep raw audit captures local-only and gitignored by default.
 - Publish only sanitized hardware audit Markdown summaries.
 
-## v0.2.2 - Guided HDA Repair Planning (Current)
+## v0.2.2 - Guided HDA Repair Planning (Done)
 - Add manual-only repair planning commands for HDA issues.
 - Add backup-first and rollback-first planning outputs.
 - Add explicit microphone verification planning with user-approved recording language.
 - Keep all repair outputs non-destructive and read-only.
+
+## v0.2.3 - Explicit Microphone Verification (Current)
+- Add explicit user-approved microphone recording verification commands.
+- Analyze local WAV captures and classify signal/silence/clipping safely.
+- Keep recordings local-only and gitignored.
+- Do not repair microphone routing automatically.
 
 ## v0.3 - Safe Device Profile Expansion
 - Safe speaker/headphone profile generation workflow.

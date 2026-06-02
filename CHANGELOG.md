@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.3] - 2026-05-31
+### Added
+- New `pipetune verify` command group with:
+  - `pipetune verify mic-plan`
+  - `pipetune verify mic-capture --duration <seconds> --confirm-recording`
+  - `pipetune verify mic-analyze <wav_file>`
+  - `pipetune verify mic-status`
+- Explicit WAV signal analysis (duration/sample-rate/channels/peak/rms/silence/clipping/status).
+- Verification output directory scaffolding:
+  - `verification/.gitkeep`
+  - `verification/microphone/.gitkeep`
+- New docs:
+  - `docs/microphone-verification.md`
+
+### Changed
+- Project version updated to `0.2.3`.
+- `pipetune version` codename updated to `Explicit Microphone Verification`.
+- `.gitignore` updated to ignore local microphone verification WAV/JSON/TXT artifacts.
+- Microphone repair docs updated with explicit verify workflow and privacy sharing guidance.
+
 ## [0.2.2] - 2026-05-31
 ### Added
 - New `pipetune repair` command group with:

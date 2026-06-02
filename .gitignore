@@ -14,6 +14,13 @@ reports/*.md
 generated/*.conf
 !generated/.gitkeep
 
+# Generated microphone verification files
+verification/microphone/*.wav
+verification/microphone/*.json
+verification/microphone/*.txt
+!verification/.gitkeep
+!verification/microphone/.gitkeep
+
 # Local raw hardware audits
 docs/system-audits/**/raw/
 docs/system-audits/**/*.txt

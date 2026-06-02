@@ -6,6 +6,7 @@ Route visibility is not proof of microphone functionality.
 ## Planning Command
 ```bash
 pipetune repair mic-test-plan
+pipetune verify mic-plan
 ```
 
 ## What the Plan Covers
@@ -17,6 +18,7 @@ pipetune repair mic-test-plan
 - Recording is never automatic.
 - Capture commands must be user-approved first.
 - Generated audio files are local artifacts created only by manual user action.
+- Prefer `pipetune verify mic-capture --duration 5 --confirm-recording --analyze` for explicit workflow.
 
 ## Calibration Note
 Do not use built-in microphone for calibration until repeatable manual validation succeeds.
@@ -24,3 +26,4 @@ Prefer an external USB or dedicated measurement microphone.
 
 ## Privacy
 PipeTune does not upload microphone or audit data.
+Do not upload raw microphone WAV files to public issues; share summarized analysis when possible.

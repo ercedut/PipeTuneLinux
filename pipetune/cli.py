@@ -20,6 +20,10 @@ from pipetune.repair.hda_plan import build_repair_context, render_hda_plan
 from pipetune.repair.mic_test_plan import render_mic_test_plan
 from pipetune.reports.json_report import write_json_report
 from pipetune.reports.markdown_report import build_markdown_report
+from pipetune.verify.mic_analyze import analyze_wav_file, render_analysis_summary
+from pipetune.verify.mic_capture import capture_microphone
+from pipetune.verify.mic_plan import render_mic_verification_plan
+from pipetune.verify.mic_status import render_mic_status
 
 _SUPPORTED_FILTER_TYPES = {"PK", "LS", "HS"}
 
@@ -87,6 +91,27 @@ def _build_parser() -> argparse.ArgumentParser:
     repair_subparsers.add_parser("backup-plan", help="Print manual backup commands for retask-related files.")
     repair_subparsers.add_parser("mic-test-plan", help="Print a safe manual microphone verification plan.")
     repair_subparsers.add_parser("checklist", help="Print a manual step-by-step repair checklist.")
+
+    verify_parser = subparsers.add_parser("verify", help="Explicit verification workflows.")
+    verify_subparsers = verify_parser.add_subparsers(dest="verify_command")
+    verify_subparsers.add_parser("mic-plan", help="Print microphone verification plan.")
+
+    verify_capture_parser = verify_subparsers.add_parser("mic-capture", help="Run explicit local microphone capture test.")
+    verify_capture_parser.add_argument("--duration", type=int, default=5, help="Capture duration in seconds (1-30).")
+    verify_capture_parser.add_argument("--output", type=Path, help="Optional output WAV path.")
+    verify_capture_parser.add_argument("--confirm-recording", action="store_true", help="Required to allow recording.")
+    verify_capture_parser.add_argument("--force", action="store_true", help="Allow overwrite if output file exists.")
+    verify_capture_parser.add_argument("--analyze", action="store_true", help="Run mic analysis immediately after capture.")
+
+    verify_analyze_parser = verify_subparsers.add_parser("mic-analyze", help="Analyze a local WAV recording.")
+    verify_analyze_parser.add_argument("wav_file", type=Path)
+    verify_analyze_parser.add_argument(
+        "--update-status",
+        action="store_true",
+        help="Allow updating latest project mic status for files outside verification/microphone.",
+    )
+
+    verify_subparsers.add_parser("mic-status", help="Show latest microphone verification status.")
 
     return parser
 
@@ -289,6 +314,42 @@ def _cmd_repair_checklist() -> int:
     return 0
 
 
+def _cmd_verify_mic_plan() -> int:
+    print(render_mic_verification_plan())
+    return 0
+
+
+def _cmd_verify_mic_capture(
+    duration: int,
+    output: Path | None,
+    confirm_recording: bool,
+    force: bool,
+    analyze: bool,
+) -> int:
+    result = capture_microphone(
+        duration=duration,
+        output_path=output,
+        confirm_recording=confirm_recording,
+        force=force,
+        analyze=analyze,
+    )
+    print(result.message)
+    return result.exit_code
+
+
+def _cmd_verify_mic_analyze(wav_file: Path, update_status: bool) -> int:
+    result = analyze_wav_file(wav_file, update_status=True if update_status else None)
+    print(render_analysis_summary(result))
+    if result.status == "invalid_file":
+        return 1
+    return 0
+
+
+def _cmd_verify_mic_status() -> int:
+    print(render_mic_status())
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -328,6 +389,23 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_repair_mic_test_plan()
         if args.repair_command == "checklist":
             return _cmd_repair_checklist()
+        parser.print_help()
+        return 1
+    if args.command == "verify":
+        if args.verify_command == "mic-plan":
+            return _cmd_verify_mic_plan()
+        if args.verify_command == "mic-capture":
+            return _cmd_verify_mic_capture(
+                duration=args.duration,
+                output=args.output,
+                confirm_recording=args.confirm_recording,
+                force=args.force,
+                analyze=args.analyze,
+            )
+        if args.verify_command == "mic-analyze":
+            return _cmd_verify_mic_analyze(args.wav_file, args.update_status)
+        if args.verify_command == "mic-status":
+            return _cmd_verify_mic_status()
         parser.print_help()
         return 1
 

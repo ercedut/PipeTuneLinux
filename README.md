@@ -2,73 +2,53 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
-## v0.2.2: Guided HDA Repair Planning
-v0.2.2 keeps the v0.2.1 read-only hardware audit workflow and adds guided manual repair planning commands.
+## v0.2.3: Explicit Microphone Verification
+v0.2.3 adds explicit, user-approved microphone capture verification on top of the existing diagnostic, hardware audit, and repair-planning workflow.
 
-## What v0.2.2 Does
-- Keeps all existing commands working: `version`, `doctor`, `devices`, `report`, `profile ...`, `hardware ...`.
-- Parses/validates AutoEQ files and generates PipeWire filter-chain config files without auto-installing them.
-- Audits HDA and microphone route state in read-only mode.
-- Adds guided repair planning commands:
-  - `pipetune repair hda-plan`
-  - `pipetune repair backup-plan`
-  - `pipetune repair mic-test-plan`
-  - `pipetune repair checklist`
+## What v0.2.3 Does
+- Keeps existing commands working: `version`, `doctor`, `devices`, `report`, `profile ...`, `hardware ...`, `repair ...`.
+- Adds `verify` commands for microphone verification:
+  - `pipetune verify mic-plan`
+  - `pipetune verify mic-capture --duration 5 --confirm-recording`
+  - `pipetune verify mic-analyze <wav_file>`
+  - `pipetune verify mic-status`
+- Distinguishes route visibility from actual capture signal verification.
 
-## What v0.2.2 Does Not Do
-- Does not modify system PipeWire/WirePlumber/ALSA configuration.
-- Does not write automatically to `~/.config/pipewire`.
-- Does not restart PipeWire/WirePlumber/ALSA.
-- Does not auto-apply HDA retask changes.
-- Does not run `hdajackretask`.
+## What v0.2.3 Does Not Do
+- Does not repair microphone routing automatically.
+- Does not modify ALSA/PipeWire/WirePlumber configuration.
+- Does not restart audio services.
+- Does not record unless explicit confirmation is passed.
 
 ## Installation
 ```bash
 python -m pip install -e .
 ```
 
-## Usage
+## Core Usage
 ```bash
-pipetune --help
 pipetune version
 pipetune doctor
-pipetune devices
-pipetune report
-pipetune report --output ./reports
-```
-
-## Profile Commands
-```bash
-pipetune profile parse examples/autoeq/sennheiser-hd650.txt
-pipetune profile validate examples/autoeq/sennheiser-hd650.txt
-pipetune profile generate examples/autoeq/sennheiser-hd650.txt --name "Sennheiser HD 650"
-```
-
-## Hardware Quirk Audit Commands
-```bash
-pipetune hardware hda-audit
 pipetune hardware mic-audit
-pipetune hardware quirk-report
+pipetune verify mic-plan
+pipetune verify mic-status
 ```
 
-## Guided Repair Planning Commands
+## Explicit Mic Capture Flow
 ```bash
-pipetune repair hda-plan
-pipetune repair backup-plan
-pipetune repair mic-test-plan
-pipetune repair checklist
+pipetune verify mic-capture --duration 5 --confirm-recording --analyze
+pipetune verify mic-analyze verification/microphone/mic-test-YYYYMMDD-HHMMSS.wav
 ```
 
 ## Privacy and Safety
-- Repair plans are local and manual-only.
-- Raw hardware audit captures are local-only under `docs/system-audits/.../raw/` and gitignored by default.
-- Public Markdown files are sanitized summaries.
-- PipeTune does not upload audit data anywhere.
-- Microphone capture tests are never automatic.
-- Any recording file is created only by manual user action.
+- Recording requires explicit `--confirm-recording`.
+- Generated WAV/JSON verification artifacts are local-only and gitignored.
+- PipeTune does not upload recordings.
+- Review recordings before sharing; prefer analysis summaries over raw WAV files.
+- No command in this release modifies system configuration automatically.
 
 ## Roadmap
-- Current: v0.2.2 Guided HDA Repair Planning.
+- Current: v0.2.3 Explicit Microphone Verification.
 - Next: v0.3 safe speaker/headphone profile generation with hardware-quirk-aware guardrails.
 
 See [docs/roadmap.md](docs/roadmap.md).
