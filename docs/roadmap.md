@@ -49,16 +49,19 @@
 - Hardware-quirk-aware profile activation guardrails.
 - No daemon, GUI, auto-switching, system-level install, or automatic service restart.
 
-## v0.3.1 - Activation Hardening and State Integrity (Current)
+## v0.3.1 - Activation Hardening and State Integrity (Done)
 - Refuse duplicate active profile installs.
 - Detect stale manifests, orphan configs, checksum mismatches, duplicate active profiles, and rolled-back configs still present.
 - Add state-doctor, verify-install, repair-state dry-run, and cleanup-rolled-back commands.
 - Keep repair-state non-mutating until a future explicit confirmed repair flow exists.
 
-## v0.4 - Benchmark and Measurement Tooling
-- Repeatable command-line benchmarking and optional measurement collection helpers.
-- Comparative profile validation workflow.
-- Ensure calibration/measurement workflows refuse unreliable built-in mics on quirk machines.
+## v0.4.0 - Measurement and Calibration Foundation (Current)
+- Generate safe logarithmic sweep WAV files with metadata sidecars.
+- Analyze recorded sweep WAV files for approximate response, level, clipping, and measurement quality.
+- Import REW-style response CSVs into normalized PipeTune response data.
+- Compare before/after response CSVs using shared-grid interpolation and simple variance metrics.
+- Generate conservative correction draft TOML data only; no automatic profile application.
+- Treat built-in laptop microphones as approximate and uncalibrated.
 
 ## v0.5 - WirePlumber Helper
 - Session policy helper tooling for profile routing and policy diagnostics.

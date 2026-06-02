@@ -27,6 +27,10 @@ verification/microphone/*.txt
 !verification/.gitkeep
 !verification/microphone/.gitkeep
 
+# Local measurement files
+measurements/
+profiles/**/*.toml
+
 # Local raw hardware audits
 docs/system-audits/**/raw/
 docs/system-audits/**/*.txt

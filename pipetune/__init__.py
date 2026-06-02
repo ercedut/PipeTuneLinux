@@ -1,4 +1,4 @@
 """PipeTune Linux package metadata."""
 
-__version__ = "0.3.1"
-CODENAME = "Activation Hardening and State Integrity"
+__version__ = "0.4.0"
+CODENAME = "Measurement and Calibration Foundation"

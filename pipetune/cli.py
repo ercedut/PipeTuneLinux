@@ -23,6 +23,12 @@ from pipetune.gain.gain_recommendations import render_gain_matrix, render_gain_p
 from pipetune.hardware.hda_audit import collect_hda_audit, render_hda_audit_summary
 from pipetune.hardware.mic_audit import collect_mic_audit, render_mic_audit_summary
 from pipetune.hardware.quirk_report import DEFAULT_QUIRK_REPORT_DIR, create_quirk_report
+from pipetune.measurement import MeasurementError
+from pipetune.measurement.analysis import analyze_sweep
+from pipetune.measurement.compare import compare_responses
+from pipetune.measurement.correction import generate_correction_draft
+from pipetune.measurement.rew import import_rew_csv
+from pipetune.measurement.sweep import generate_log_sweep, metadata_path_for_wav
 from pipetune.profile.autoeq_parser import parse_autoeq_file
 from pipetune.profile.pipewire_generator import write_generated_config
 from pipetune.profile.validator import validate_profile
@@ -181,6 +187,44 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     verify_subparsers.add_parser("mic-status", help="Show latest microphone verification status.")
+
+    measure_parser = subparsers.add_parser("measure", help="Generate and analyze measurement data.")
+    measure_subparsers = measure_parser.add_subparsers(dest="measure_command")
+
+    sweep_parser = measure_subparsers.add_parser("generate-sweep", help="Generate a logarithmic sine sweep WAV.")
+    sweep_parser.add_argument("--output", type=Path, required=True, help="Output mono WAV file.")
+    sweep_parser.add_argument("--duration", type=float, default=10.0, help="Sweep duration in seconds (default: 10).")
+    sweep_parser.add_argument("--sample-rate", type=int, default=48000, help="Sample rate in Hz (default: 48000).")
+    sweep_parser.add_argument("--start-hz", type=float, default=20.0, help="Start frequency in Hz (default: 20).")
+    sweep_parser.add_argument("--end-hz", type=float, default=20000.0, help="End frequency in Hz (default: 20000).")
+    sweep_parser.add_argument("--amplitude", type=float, default=0.5, help="Peak amplitude 0.0-0.9 (default: 0.5).")
+
+    analyze_parser = measure_subparsers.add_parser("analyze-sweep", help="Analyze a recorded sweep WAV.")
+    analyze_parser.add_argument("--sweep", type=Path, required=True, help="Generated sweep WAV.")
+    analyze_parser.add_argument("--recorded", type=Path, required=True, help="Recorded sweep WAV.")
+    analyze_parser.add_argument("--output", type=Path, required=True, help="Output JSON report.")
+    analyze_parser.add_argument("--csv-output", type=Path, help="Optional normalized response CSV output.")
+
+    import_rew_parser = measure_subparsers.add_parser("import-rew", help="Import REW-style measurement CSV.")
+    import_rew_parser.add_argument("--input", type=Path, required=True, help="Input REW CSV.")
+    import_rew_parser.add_argument("--output", type=Path, required=True, help="Output normalized CSV.")
+
+    compare_parser = measure_subparsers.add_parser("compare-response", help="Compare before/after response CSV files.")
+    compare_parser.add_argument("--before", type=Path, required=True, help="Before normalized CSV.")
+    compare_parser.add_argument("--after", type=Path, required=True, help="After normalized CSV.")
+    compare_parser.add_argument("--output", type=Path, required=True, help="Output comparison JSON.")
+
+    correction_parser = measure_subparsers.add_parser("generate-correction", help="Generate a safe draft correction TOML.")
+    correction_parser.add_argument("--input", type=Path, required=True, help="Input normalized response CSV.")
+    correction_parser.add_argument("--output", type=Path, required=True, help="Output draft TOML profile.")
+    correction_parser.add_argument("--target", default="flat", help="Correction target (default: flat).")
+    correction_parser.add_argument("--safe", action="store_true", help="Required safe correction mode.")
+    correction_parser.add_argument(
+        "--profile-type",
+        default="laptop-speaker",
+        choices=["laptop-speaker", "measurement-correction"],
+        help="Draft profile type (default: laptop-speaker).",
+    )
 
     return parser
 
@@ -527,6 +571,112 @@ def _cmd_verify_mic_status() -> int:
     return 0
 
 
+def _cmd_measure_generate_sweep(
+    output: Path,
+    duration: float,
+    sample_rate: int,
+    start_hz: float,
+    end_hz: float,
+    amplitude: float,
+) -> int:
+    try:
+        generate_log_sweep(
+            output,
+            duration_seconds=duration,
+            sample_rate=sample_rate,
+            start_hz=start_hz,
+            end_hz=end_hz,
+            amplitude=amplitude,
+        )
+    except MeasurementError as exc:
+        print(f"Measurement sweep generation failed: {exc}")
+        print("No system configuration was modified.")
+        return 1
+
+    print(f"Generated sweep WAV: {output}")
+    print(f"Metadata: {metadata_path_for_wav(output)}")
+    print("Warning: keep playback volume low and stop immediately if playback is unsafe.")
+    print("No system configuration was modified.")
+    return 0
+
+
+def _cmd_measure_analyze_sweep(sweep: Path, recorded: Path, output: Path, csv_output: Path | None) -> int:
+    try:
+        report = analyze_sweep(sweep, recorded, output, csv_output=csv_output)
+    except MeasurementError as exc:
+        print(f"Measurement analysis failed: {exc}")
+        print("No correction was generated.")
+        print("No system configuration was modified.")
+        return 1
+
+    print(f"Analysis report: {output}")
+    if csv_output is not None:
+        print(f"Response CSV: {csv_output}")
+    print(f"Measurement quality: {report.measurement_quality}")
+    print(f"Analysis warning: {report.analysis_warning}")
+    print("No correction was generated.")
+    print("No system configuration was modified.")
+    return 0 if report.measurement_quality != "fail" else 1
+
+
+def _cmd_measure_import_rew(input_path: Path, output: Path) -> int:
+    try:
+        metadata = import_rew_csv(input_path, output)
+    except MeasurementError as exc:
+        print(f"REW import failed: {exc}")
+        print("No system configuration was modified.")
+        return 1
+
+    print(f"Imported normalized response: {output}")
+    print(f"Metadata: {output.with_suffix(output.suffix + '.json')}")
+    print(f"Rows imported: {metadata['row_count']}")
+    print("No system configuration was modified.")
+    return 0
+
+
+def _cmd_measure_compare_response(before: Path, after: Path, output: Path) -> int:
+    try:
+        report = compare_responses(before, after, output)
+    except MeasurementError as exc:
+        print(f"Response comparison failed: {exc}")
+        print("No system configuration was modified.")
+        return 1
+
+    print(f"Comparison report: {output}")
+    print(f"Average absolute difference: {report['average_absolute_difference_db']} dB")
+    print(f"Flatter by variance: {str(report['flatter_by_variance']).lower()}")
+    print("No system configuration was modified.")
+    return 0
+
+
+def _cmd_measure_generate_correction(
+    input_path: Path,
+    output: Path,
+    target: str,
+    safe: bool,
+    profile_type: str,
+) -> int:
+    try:
+        generate_correction_draft(
+            input_path,
+            output,
+            target=target,
+            safe=safe,
+            profile_type=profile_type,
+        )
+    except MeasurementError as exc:
+        print(f"Correction draft generation failed: {exc}")
+        print("No correction profile was applied.")
+        print("No system configuration was modified.")
+        return 1
+
+    print(f"Correction draft TOML: {output}")
+    print("Warning: this is a draft correction only. It was not installed or applied.")
+    print("No correction profile was applied.")
+    print("No system configuration was modified.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -620,6 +770,32 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_verify_mic_analyze(args.wav_file, args.update_status)
         if args.verify_command == "mic-status":
             return _cmd_verify_mic_status()
+        parser.print_help()
+        return 1
+    if args.command == "measure":
+        if args.measure_command == "generate-sweep":
+            return _cmd_measure_generate_sweep(
+                args.output,
+                args.duration,
+                args.sample_rate,
+                args.start_hz,
+                args.end_hz,
+                args.amplitude,
+            )
+        if args.measure_command == "analyze-sweep":
+            return _cmd_measure_analyze_sweep(args.sweep, args.recorded, args.output, args.csv_output)
+        if args.measure_command == "import-rew":
+            return _cmd_measure_import_rew(args.input, args.output)
+        if args.measure_command == "compare-response":
+            return _cmd_measure_compare_response(args.before, args.after, args.output)
+        if args.measure_command == "generate-correction":
+            return _cmd_measure_generate_correction(
+                args.input,
+                args.output,
+                args.target,
+                args.safe,
+                args.profile_type,
+            )
         parser.print_help()
         return 1
 

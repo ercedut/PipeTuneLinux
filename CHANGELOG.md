@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.0] - 2026-06-02
+### Added
+- New `pipetune measure` command group.
+- New `pipetune measure generate-sweep` command for safe logarithmic mono WAV sweep generation with sidecar metadata.
+- New `pipetune measure analyze-sweep` command for approximate FFT-based response reports, level checks, clipping detection, and optional CSV output.
+- New `pipetune measure import-rew` command for REW-style CSV import into normalized `freq_hz,magnitude_db` data.
+- New `pipetune measure compare-response` command for before/after response comparison with shared-grid interpolation and variance wording.
+- New `pipetune measure generate-correction` command for conservative draft TOML correction data.
+- New `pipetune/measurement/` package and measurement documentation.
+
+### Changed
+- Project version updated to `0.4.0`.
+- `pipetune version` codename updated to `Measurement and Calibration Foundation`.
+- README and roadmap updated for the v0.4 measurement workflow.
+
+### Safety
+- Sweep amplitudes above `0.9` are refused.
+- Correction generation requires `--safe`, limits boost to `+3 dB`, adds laptop-speaker high-pass metadata, includes preamp headroom, and never applies profiles automatically.
+- Built-in laptop microphones are documented as approximate and uncalibrated.
+- Measurement commands do not modify PipeWire, WirePlumber, ALSA, user audio configs, or system audio configs.
+
 ## [0.3.1] - 2026-06-02
 ### Added
 - Duplicate active install protection for profile install.
