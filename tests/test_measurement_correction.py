@@ -20,6 +20,7 @@ def test_generate_correction_creates_conservative_draft_toml(tmp_path) -> None:
     assert "max_boost_db = 3" in text
     assert 'type = "high_pass"' in text
     assert "preamp_headroom_db = -" in text
+    assert output.with_suffix(output.suffix + ".safety.json").exists()
 
 
 def test_generate_correction_refuses_unsafe_boost(tmp_path) -> None:
@@ -33,3 +34,11 @@ def test_generate_correction_refuses_unsafe_boost(tmp_path) -> None:
     with pytest.raises(MeasurementError, match="Unsafe correction"):
         generate_correction_draft(source, output, target="flat", safe=True)
 
+
+def test_generate_correction_refuses_failed_response_validation(tmp_path) -> None:
+    output = tmp_path / "correction-draft.toml"
+
+    with pytest.raises(MeasurementError, match="Correction refused"):
+        generate_correction_draft(Path("tests/fixtures/measurement/narrow.csv"), output, target="flat", safe=True)
+
+    assert not output.exists()

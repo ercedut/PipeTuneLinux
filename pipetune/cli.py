@@ -28,7 +28,9 @@ from pipetune.measurement.analysis import analyze_sweep
 from pipetune.measurement.compare import compare_responses
 from pipetune.measurement.correction import generate_correction_draft
 from pipetune.measurement.rew import import_rew_csv
+from pipetune.measurement.response import render_response_validation, validate_response_csv
 from pipetune.measurement.sweep import generate_log_sweep, metadata_path_for_wav
+from pipetune.measurement.wav import inspect_wav, render_wav_diagnostics
 from pipetune.profile.autoeq_parser import parse_autoeq_file
 from pipetune.profile.pipewire_generator import write_generated_config
 from pipetune.profile.validator import validate_profile
@@ -205,9 +207,20 @@ def _build_parser() -> argparse.ArgumentParser:
     analyze_parser.add_argument("--output", type=Path, required=True, help="Output JSON report.")
     analyze_parser.add_argument("--csv-output", type=Path, help="Optional normalized response CSV output.")
 
+    inspect_parser = measure_subparsers.add_parser("inspect-wav", help="Inspect WAV signal safety and levels.")
+    inspect_parser.add_argument("--input", type=Path, required=True, help="Input WAV file.")
+    inspect_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON diagnostics.")
+
     import_rew_parser = measure_subparsers.add_parser("import-rew", help="Import REW-style measurement CSV.")
     import_rew_parser.add_argument("--input", type=Path, required=True, help="Input REW CSV.")
     import_rew_parser.add_argument("--output", type=Path, required=True, help="Output normalized CSV.")
+
+    validate_response_parser = measure_subparsers.add_parser(
+        "validate-response",
+        help="Validate normalized measurement response CSV.",
+    )
+    validate_response_parser.add_argument("--input", type=Path, required=True, help="Input normalized response CSV.")
+    validate_response_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON validation.")
 
     compare_parser = measure_subparsers.add_parser("compare-response", help="Compare before/after response CSV files.")
     compare_parser.add_argument("--before", type=Path, required=True, help="Before normalized CSV.")
@@ -619,6 +632,18 @@ def _cmd_measure_analyze_sweep(sweep: Path, recorded: Path, output: Path, csv_ou
     return 0 if report.measurement_quality != "fail" else 1
 
 
+def _cmd_measure_inspect_wav(input_path: Path, json_output: bool) -> int:
+    try:
+        diagnostics = inspect_wav(input_path)
+    except MeasurementError as exc:
+        print(f"WAV inspection failed: {exc}")
+        print("No system configuration was modified.")
+        return 1
+
+    print(render_wav_diagnostics(diagnostics, json_output=json_output))
+    return 0 if diagnostics.measurement_quality != "fail" else 1
+
+
 def _cmd_measure_import_rew(input_path: Path, output: Path) -> int:
     try:
         metadata = import_rew_csv(input_path, output)
@@ -632,6 +657,12 @@ def _cmd_measure_import_rew(input_path: Path, output: Path) -> int:
     print(f"Rows imported: {metadata['row_count']}")
     print("No system configuration was modified.")
     return 0
+
+
+def _cmd_measure_validate_response(input_path: Path, json_output: bool) -> int:
+    report = validate_response_csv(input_path)
+    print(render_response_validation(report, json_output=json_output))
+    return 0 if report.measurement_quality != "fail" else 1
 
 
 def _cmd_measure_compare_response(before: Path, after: Path, output: Path) -> int:
@@ -784,8 +815,12 @@ def main(argv: list[str] | None = None) -> int:
             )
         if args.measure_command == "analyze-sweep":
             return _cmd_measure_analyze_sweep(args.sweep, args.recorded, args.output, args.csv_output)
+        if args.measure_command == "inspect-wav":
+            return _cmd_measure_inspect_wav(args.input, args.json)
         if args.measure_command == "import-rew":
             return _cmd_measure_import_rew(args.input, args.output)
+        if args.measure_command == "validate-response":
+            return _cmd_measure_validate_response(args.input, args.json)
         if args.measure_command == "compare-response":
             return _cmd_measure_compare_response(args.before, args.after, args.output)
         if args.measure_command == "generate-correction":

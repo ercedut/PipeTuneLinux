@@ -2,10 +2,10 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
-## v0.4.0: Measurement and Calibration Foundation
-v0.4.0 adds a read-only measurement command group for generating test sweeps, analyzing recorded sweep data, importing REW-style response CSVs, comparing responses, and creating conservative correction draft TOML files.
+## v0.4.1: Measurement Accuracy and Safety Hardening
+v0.4.1 hardens the read-only measurement layer with WAV inspection, response validation, stricter correction refusal rules, and clearer machine-readable measurement fields.
 
-## What v0.4.0 Does
+## What v0.4.1 Does
 - Keeps existing v0.1 through v0.3.1 commands working.
 - Installs generated profiles only into `~/.config/pipewire/pipewire.conf.d/`.
 - Requires `--user` and `--confirm-install` before writing user-level config.
@@ -15,8 +15,9 @@ v0.4.0 adds a read-only measurement command group for generating test sweeps, an
 - Provides rollback, list, activation-status, and dry-run commands.
 - Adds `state-doctor`, `verify-install`, dry-run repair proposals, and safe rolled-back manifest cleanup.
 - Adds `pipetune measure` commands for local measurement files and draft correction data.
+- Adds `inspect-wav` and `validate-response` for measurement trust checks.
 
-## What v0.4.0 Does Not Do
+## What v0.4.1 Does Not Do
 - Does not use sudo.
 - Does not write to `/etc`, `/lib`, `/sys`, `/proc`, or system audio configuration.
 - Does not restart PipeWire, WirePlumber, ALSA, or the system automatically.
@@ -24,6 +25,7 @@ v0.4.0 adds a read-only measurement command group for generating test sweeps, an
 - Does not install blocked or unknown preflight profiles.
 - Does not auto-apply generated measurement corrections.
 - Does not claim sound quality improvement without measurement output.
+- Does not improve sound directly; it improves measurement trustworthiness before any later plugin or daemon work.
 
 ## Installation
 ```bash
@@ -86,9 +88,15 @@ pipetune measure analyze-sweep \
   --output measurements/reports/laptop-speaker-response.json \
   --csv-output measurements/reports/laptop-speaker-response.csv
 
+pipetune measure inspect-wav \
+  --input measurements/recordings/laptop-speaker-recorded.wav
+
 pipetune measure import-rew \
   --input measurements/rew/export.csv \
   --output measurements/imported/rew-normalized.csv
+
+pipetune measure validate-response \
+  --input measurements/imported/rew-normalized.csv
 
 pipetune measure compare-response \
   --before measurements/before.csv \
@@ -102,7 +110,7 @@ pipetune measure generate-correction \
   --safe
 ```
 
-Measurement corrections are drafts only. PipeTune does not install them, apply them, restart services, or modify audio configuration.
+Measurement corrections are drafts only. PipeTune does not install them, apply them, restart services, or modify audio configuration. Response comparison reports `flatter_by_variance`; it does not claim better sound.
 
 ## Privacy and Safety
 - Recording requires explicit `--confirm-recording`.
@@ -112,7 +120,7 @@ Measurement corrections are drafts only. PipeTune does not install them, apply t
 - Mixer and hardware audit output can reveal device details; review output before sharing publicly.
 
 ## Roadmap
-- Current: v0.4.0 Measurement and Calibration Foundation.
+- Current: v0.4.1 Measurement Accuracy and Safety Hardening.
 - Next: v0.5 WirePlumber helper.
 
 See [docs/roadmap.md](docs/roadmap.md).

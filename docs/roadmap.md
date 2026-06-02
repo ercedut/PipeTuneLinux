@@ -55,13 +55,21 @@
 - Add state-doctor, verify-install, repair-state dry-run, and cleanup-rolled-back commands.
 - Keep repair-state non-mutating until a future explicit confirmed repair flow exists.
 
-## v0.4.0 - Measurement and Calibration Foundation (Current)
+## v0.4.0 - Measurement and Calibration Foundation (Done)
 - Generate safe logarithmic sweep WAV files with metadata sidecars.
 - Analyze recorded sweep WAV files for approximate response, level, clipping, and measurement quality.
 - Import REW-style response CSVs into normalized PipeTune response data.
 - Compare before/after response CSVs using shared-grid interpolation and simple variance metrics.
 - Generate conservative correction draft TOML data only; no automatic profile application.
 - Treat built-in laptop microphones as approximate and uncalibrated.
+
+## v0.4.1 - Measurement Accuracy and Safety Hardening (Current)
+- Add read-only WAV inspection with clipping, silence, DC offset, sample format, channel count, and quality flags.
+- Add normalized response validation with pass/warn/fail output.
+- Harden REW import metadata and malformed-row handling.
+- Harden response comparison band summaries and shared-grid overlap checks.
+- Refuse correction drafts when response data quality fails.
+- Document stable machine-readable measurement fields.
 
 ## v0.5 - WirePlumber Helper
 - Session policy helper tooling for profile routing and policy diagnostics.

@@ -1,6 +1,8 @@
 # Measurement and Calibration
 
-PipeTune v0.4.0 provides a local, read-only measurement foundation. It creates files and reports only. It does not modify PipeWire, WirePlumber, ALSA, system audio configuration, user audio configuration, or restart audio services.
+PipeTune v0.4.1 provides a local, read-only measurement foundation with stricter inspection and validation. It creates files and reports only. It does not modify PipeWire, WirePlumber, ALSA, system audio configuration, user audio configuration, or restart audio services.
+
+v0.4.1 does not improve sound directly. It improves measurement trustworthiness before any later plugin, daemon, or automatic correction work.
 
 ## Log Sweep Generation
 Use `generate-sweep` to create a mono logarithmic sine sweep WAV:
@@ -41,6 +43,18 @@ If clipping is detected, the report quality is `fail`. If the recording is too q
 
 This command does not generate correction automatically.
 
+## WAV Inspection
+Use `inspect-wav` to check a WAV before trusting it:
+
+```bash
+pipetune measure inspect-wav --input measurements/recordings/laptop-speaker-recorded.wav
+pipetune measure inspect-wav --input measurements/recordings/laptop-speaker-recorded.wav --json
+```
+
+The command reports measured sample rate, duration, channels, sample format, peak, RMS, clipping, silence, DC offset, dominant frequency estimate, quality flags, and a `pass`, `warn`, or `fail` verdict. It does not write files.
+
+Clipping and silence matter because either condition can make frequency response data unreliable. Clipped recordings should be repeated at lower playback or capture gain. Silent or very quiet recordings should be repeated with careful gain staging.
+
 ## REW Import Workflow
 Room EQ Wizard and similar tools can export CSV response data. PipeTune accepts common frequency and magnitude column names:
 
@@ -65,7 +79,17 @@ The normalized output columns are:
 freq_hz,magnitude_db
 ```
 
-A sidecar JSON records source format, row count, frequency range, import timestamp, and warnings.
+A sidecar JSON records source format, row count, skipped row count, detected source columns, frequency range, import timestamp, and warnings.
+
+## Response Validation
+Use `validate-response` before comparison or correction:
+
+```bash
+pipetune measure validate-response \
+  --input measurements/imported/rew-normalized.csv
+```
+
+Validation checks positive frequencies, sorted or unsorted frequency data, duplicate frequencies, unrealistic magnitudes, too few points, narrow frequency coverage, and large adjacent magnitude jumps. Output is `pass`, `warn`, or `fail`.
 
 ## Response Comparison
 Use `compare-response` to compare normalized before/after CSV files:
@@ -79,7 +103,7 @@ pipetune measure compare-response \
 
 PipeTune interpolates onto a shared frequency grid when needed and reports average absolute difference, maximum absolute difference, low/mid/high band summaries, and `flatter_by_variance`.
 
-The wording is deliberately limited. `flatter_by_variance: true` means only that the after response has lower variance by this simple metric. It does not mean better sound.
+The wording is deliberately limited. `flatter_by_variance: true` means only that the after response has lower variance by this simple metric. It does not mean better sound or subjective improvement.
 
 ## Correction Draft Workflow
 Use `generate-correction` to create a conservative draft from normalized response data:
@@ -106,7 +130,11 @@ Safety limits include:
 
 If a response would require unsafe boost, PipeTune refuses to generate the draft.
 
+v0.4.1 also refuses correction drafts when response validation fails because of too few points, narrow coverage, unrealistic magnitude values, or unrealistic magnitude jumps. A correction safety report JSON is written next to successful draft TOML output.
+
 ## Why Profiles Are Not Auto-Applied
 Measurements can be wrong because of microphone calibration, placement, room reflections, playback gain, capture gain, clipping, background noise, or export mistakes.
 
-For that reason, PipeTune v0.4.0 only creates reports and draft correction data. Users must review, remeasure, and explicitly use the existing profile safety and activation workflow before any manual use.
+For that reason, PipeTune v0.4.1 only creates reports and draft correction data. Users must review, remeasure, and explicitly use the existing profile safety and activation workflow before any manual use.
+
+See `docs/measurement-report-fields.md` for stable machine-readable report fields.

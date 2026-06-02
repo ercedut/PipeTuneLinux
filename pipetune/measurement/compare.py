@@ -2,19 +2,35 @@
 
 from __future__ import annotations
 
-import csv
 import json
-import math
 from pathlib import Path
 
 from pipetune.measurement import MeasurementError
+from pipetune.measurement.response import read_normalized_response_csv, validate_response_csv
 
+MIN_SHARED_GRID_POINTS = 3
+BANDS = {
+    "sub_bass": (20.0, 60.0),
+    "bass": (60.0, 250.0),
+    "low_mid": (250.0, 500.0),
+    "mid": (500.0, 2000.0),
+    "upper_mid": (2000.0, 4000.0),
+    "treble": (4000.0, 10000.0),
+    "air": (10000.0, 20000.0),
+}
 
 def compare_responses(before_path: Path, after_path: Path, output_path: Path) -> dict[str, object]:
+    before_validation = validate_response_csv(before_path)
+    after_validation = validate_response_csv(after_path)
+    if before_validation.errors:
+        raise MeasurementError(f"Before response validation failed: {before_validation.errors[0]}")
+    if after_validation.errors:
+        raise MeasurementError(f"After response validation failed: {after_validation.errors[0]}")
+
     before = read_normalized_response_csv(before_path)
     after = read_normalized_response_csv(after_path)
     grid = _shared_grid(before, after)
-    if not grid:
+    if len(grid) < MIN_SHARED_GRID_POINTS:
         raise MeasurementError("Response files do not have an overlapping frequency range.")
 
     before_values = [_interpolate(before, frequency) for frequency in grid]
@@ -28,13 +44,15 @@ def compare_responses(before_path: Path, after_path: Path, output_path: Path) ->
         "grid_point_count": len(grid),
         "min_freq_hz": round(min(grid), 3),
         "max_freq_hz": round(max(grid), 3),
+        "frequency_overlap_warning": _overlap_warning(grid),
         "average_absolute_difference_db": round(sum(abs_diffs) / len(abs_diffs), 3),
         "max_absolute_difference_db": round(max(abs_diffs), 3),
         "band_summaries": {
-            "low": _band_summary(grid, diffs, 20.0, 250.0),
-            "mid": _band_summary(grid, diffs, 250.0, 4000.0),
-            "high": _band_summary(grid, diffs, 4000.0, 20000.0),
+            name: _band_summary(grid, diffs, low, high)
+            for name, (low, high) in BANDS.items()
         },
+        "variance_before": round(_variance(before_values), 3),
+        "variance_after": round(_variance(after_values), 3),
         "before_variance_db2": round(_variance(before_values), 3),
         "after_variance_db2": round(_variance(after_values), 3),
         "flatter_by_variance": _variance(after_values) < _variance(before_values),
@@ -43,31 +61,6 @@ def compare_responses(before_path: Path, after_path: Path, output_path: Path) ->
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
-
-
-def read_normalized_response_csv(path: Path) -> list[tuple[float, float]]:
-    if not path.exists():
-        raise MeasurementError(f"Response CSV does not exist: {path}")
-    with path.open("r", encoding="utf-8-sig", newline="") as input_file:
-        reader = csv.DictReader(input_file)
-        if not reader.fieldnames or "freq_hz" not in reader.fieldnames or "magnitude_db" not in reader.fieldnames:
-            raise MeasurementError("Response CSV must contain freq_hz and magnitude_db columns.")
-        rows: list[tuple[float, float]] = []
-        for line_number, row in enumerate(reader, start=2):
-            try:
-                frequency = float(str(row["freq_hz"]).strip())
-                magnitude = float(str(row["magnitude_db"]).strip())
-            except ValueError as exc:
-                raise MeasurementError(f"Response CSV has invalid numeric value on line {line_number}.") from exc
-            if not math.isfinite(frequency) or frequency <= 0:
-                raise MeasurementError(f"Response CSV frequency must be positive on line {line_number}.")
-            if not math.isfinite(magnitude):
-                raise MeasurementError(f"Response CSV magnitude must be finite on line {line_number}.")
-            rows.append((frequency, magnitude))
-
-    if not rows:
-        raise MeasurementError("Response CSV contains no measurement rows.")
-    return sorted(rows)
 
 
 def _shared_grid(before: list[tuple[float, float]], after: list[tuple[float, float]]) -> list[float]:
@@ -114,3 +107,8 @@ def _variance(values: list[float]) -> float:
     mean = sum(values) / len(values)
     return sum((value - mean) ** 2 for value in values) / len(values)
 
+
+def _overlap_warning(grid: list[float]) -> str | None:
+    if len(grid) < 6 or (max(grid) / min(grid) if min(grid) > 0 else 0) < 10:
+        return "Warning: frequency overlap is small; comparison is approximate."
+    return None

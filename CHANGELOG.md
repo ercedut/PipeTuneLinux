@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.1] - 2026-06-02
+### Added
+- New `pipetune measure inspect-wav --input <wav> [--json]` command for read-only WAV diagnostics.
+- New `pipetune measure validate-response --input <csv> [--json]` command for normalized response validation.
+- Deterministic synthetic measurement tests for sine waves, quiet signals, clipped signals, DC offset, stereo WAVs, float32 WAVs, and response CSV quality.
+- Stable field documentation in `docs/measurement-report-fields.md`.
+
+### Changed
+- Project version updated to `0.4.1`.
+- `pipetune version` codename updated to `Measurement Accuracy and Safety Hardening`.
+- Sweep analysis reports now include channel count, sample format, DC offset, silence detection, quality flags, and detailed warnings.
+- REW import metadata now records detected source column names and skipped row count.
+- Response comparison now reports sub-bass, bass, low-mid, mid, upper-mid, treble, and air band summaries, plus `variance_before`, `variance_after`, and `flatter_by_variance`.
+- Correction generation validates response quality before drafting and writes a `.safety.json` sidecar.
+
+### Safety
+- Correction drafts are refused for failed response validation, too few points, narrow frequency coverage, unrealistic magnitude values, or unrealistic magnitude jumps.
+- Laptop-speaker correction remains conservative: no boost below 120 Hz, max boost `+3 dB`, mandatory high-pass, mandatory preamp headroom, and limiter metadata.
+- Measurement wording remains cautious: approximate, measured, estimated, warning, fail, pass.
+- No PipeWire, WirePlumber, ALSA, service, system config, or user audio config mutation was added.
+
 ## [0.4.0] - 2026-06-02
 ### Added
 - New `pipetune measure` command group.

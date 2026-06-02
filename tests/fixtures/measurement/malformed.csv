@@ -1,0 +1,4 @@
+freq_hz,magnitude_db
+20,0
+-40,1
+80,not-a-number

@@ -9,21 +9,27 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from pipetune.measurement import MeasurementError
-from pipetune.measurement.wav import read_wav_mono
+from pipetune.measurement.wav import inspect_wav, read_wav_mono
 
 
 @dataclass(slots=True)
 class SweepAnalysisReport:
     sweep_file: str
     recorded_file: str
+    channel_count: int
+    sample_width_or_format: str
     sample_rate: int
     duration_seconds: float
     peak_dbfs: float
     rms_dbfs: float
+    dc_offset: float
     clipping_detected: bool
+    silence_detected: bool
+    quality_flags: list[str]
     frequency_bins: list[float]
     magnitude_db: list[float]
     analysis_warning: str
+    warnings: list[str]
     measurement_quality: str
 
 
@@ -43,26 +49,38 @@ def analyze_sweep(
         )
     if not sweep.samples or not recorded.samples:
         raise MeasurementError("Sweep and recorded WAV files must contain audio.")
+    if min(len(sweep.samples), len(recorded.samples)) < 1024:
+        raise MeasurementError("Recorded sweep is too short for frequency analysis.")
 
-    peak = max(abs(sample) for sample in recorded.samples)
-    rms = math.sqrt(sum(sample * sample for sample in recorded.samples) / len(recorded.samples))
-    clipping_detected = peak >= 0.999
-    peak_dbfs = _dbfs(peak)
-    rms_dbfs = _dbfs(rms)
-    quality, warning = _quality_from_levels(peak_dbfs, rms_dbfs, clipping_detected)
+    diagnostics = inspect_wav(recorded_path)
+    quality_flags = list(diagnostics.quality_flags)
+    warnings = list(diagnostics.warnings)
+    duration_delta = abs(sweep.duration_seconds - recorded.duration_seconds)
+    if duration_delta > max(0.1, sweep.duration_seconds * 0.05):
+        quality_flags.append("duration_mismatch")
+        warnings.append(
+            "Warning: sweep and recorded durations differ; frequency response is approximate."
+        )
+    quality, warning = _quality_from_diagnostics(diagnostics.measurement_quality, quality_flags)
     bins, magnitudes = _frequency_response(sweep.samples, recorded.samples, sweep.sample_rate)
 
     report = SweepAnalysisReport(
         sweep_file=str(sweep_path),
         recorded_file=str(recorded_path),
+        channel_count=recorded.channels,
+        sample_width_or_format=recorded.sample_width_or_format,
         sample_rate=sweep.sample_rate,
         duration_seconds=recorded.duration_seconds,
-        peak_dbfs=round(peak_dbfs, 3),
-        rms_dbfs=round(rms_dbfs, 3),
-        clipping_detected=clipping_detected,
+        peak_dbfs=diagnostics.peak_dbfs,
+        rms_dbfs=diagnostics.rms_dbfs,
+        dc_offset=diagnostics.dc_offset,
+        clipping_detected=diagnostics.clipping_detected,
+        silence_detected=diagnostics.silence_detected,
+        quality_flags=quality_flags,
         frequency_bins=[round(value, 3) for value in bins],
         magnitude_db=[round(value, 3) for value in magnitudes],
         analysis_warning=warning,
+        warnings=warnings,
         measurement_quality=quality,
     )
 
@@ -82,12 +100,14 @@ def write_response_csv(path: Path, frequencies: list[float], magnitudes: list[fl
             writer.writerow([f"{frequency:.3f}", f"{magnitude:.3f}"])
 
 
-def _quality_from_levels(peak_dbfs: float, rms_dbfs: float, clipping_detected: bool) -> tuple[str, str]:
-    if clipping_detected:
+def _quality_from_diagnostics(base_quality: str, quality_flags: list[str]) -> tuple[str, str]:
+    if "clipping" in quality_flags:
         return "fail", "Recorded sweep is clipped. Lower playback or capture gain and record again."
-    if peak_dbfs < -80 or rms_dbfs < -75:
+    if "silence" in quality_flags:
         return "fail", "Recorded sweep is too quiet for reliable analysis."
-    if peak_dbfs < -50 or rms_dbfs < -55:
+    if "very_short" in quality_flags:
+        return "fail", "Recorded sweep is too short for reliable analysis."
+    if base_quality == "warn" or quality_flags:
         return "warn", "Recorded sweep is quiet; response is approximate and may be noise-dominated."
     return "pass", "Approximate FFT response only; built-in laptop microphones are uncalibrated."
 
@@ -177,4 +197,3 @@ def _dbfs(value: float) -> float:
     if value <= 0:
         return -120.0
     return 20.0 * math.log10(value)
-
