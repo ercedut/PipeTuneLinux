@@ -34,17 +34,20 @@
 - Print manual-only gain tuning plans and test matrices.
 - Keep all commands non-destructive: no mixer changes, no service restarts, no ALSA state storage.
 
-## v0.2.5 - Profile Safety Metadata and Activation Preflight (Current)
+## v0.2.5 - Profile Safety Metadata and Activation Preflight (Done)
 - Add generated profile manifests and safety metadata.
 - Add profile safety-check and activation preflight commands.
 - Add hardware quirk status for future profile activation.
 - Decide whether future activation is ready, requires confirmation, blocked, or unknown.
 - Keep all behavior preflight-only: no install, no activation, no PipeWire config writes.
 
-## v0.3 - Safe Profile Activation
+## v0.3.0 - Safe Profile Activation (Current)
 - Safe user-level profile installation workflow with explicit confirmation.
-- Optional EasyEffects exporter for generated profile data.
+- Backup existing user-level config before overwrite.
+- Record install manifests and checksums.
+- Add rollback, list-installed, dry-run-install, and activation-status commands.
 - Hardware-quirk-aware profile activation guardrails.
+- No daemon, GUI, auto-switching, system-level install, or automatic service restart.
 
 ## v0.4 - Benchmark and Measurement Tooling
 - Repeatable command-line benchmarking and optional measurement collection helpers.

@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0] - 2026-06-02
+### Added
+- New `pipetune profile dry-run-install <generated_config_file> --user` command.
+- New `pipetune profile install <generated_config_file> --user --confirm-install` command.
+- New `pipetune profile list-installed` command.
+- New `pipetune profile activation-status` command.
+- New `pipetune profile rollback <install_id> --confirm-rollback` and `pipetune profile rollback --latest --confirm-rollback` commands.
+- New `pipetune/activation/` package for user-level install paths, backups, install manifests, status, and rollback.
+- New documentation:
+  - `docs/safe-profile-activation.md`
+  - `docs/profile-rollback.md`
+
+### Changed
+- Project version updated to `0.3.0`.
+- `pipetune version` codename updated to `Safe Profile Activation`.
+- README and roadmap updated for conservative user-level activation.
+- `.gitignore` updated for local activation test/runtime state.
+
+### Safety
+- Installs are user-level only under `~/.config/pipewire/pipewire.conf.d/`.
+- Install requires `--user --confirm-install`.
+- Hardware-quirk-sensitive installs require `--confirm-hardware-quirk`.
+- PipeTune creates backups and install manifests before writing user-level config.
+- PipeTune does not restart services automatically.
+- Rollback verifies checksums before removing installed files.
+
 ## [0.2.5] - 2026-06-02
 ### Added
 - New `pipetune profile manifest <generated_config_file> --name <name> --type <type>` command.

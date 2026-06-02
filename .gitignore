@@ -4,6 +4,9 @@ __pycache__/
 *.egg-info/
 .venv/
 .pytest_cache/
+.local-pipetune-test/
+pipetune-install-test/
+*.install-state.json
 
 # Generated reports
 reports/*.json

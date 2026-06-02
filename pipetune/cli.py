@@ -6,6 +6,9 @@ import argparse
 from pathlib import Path
 
 from pipetune import CODENAME, __version__
+from pipetune.activation.installer import install_profile, render_install_dry_run, render_install_result, run_install_dry_run
+from pipetune.activation.rollback import render_rollback_result, rollback_profile
+from pipetune.activation.status import render_activation_status, render_installed_profiles
 from pipetune.devices import collect_devices, render_devices_output
 from pipetune.doctor import render_doctor_summary, run_diagnostic
 from pipetune.gain.gain_audit import collect_gain_audit, render_gain_audit
@@ -89,6 +92,30 @@ def _build_parser() -> argparse.ArgumentParser:
 
     preflight_parser = profile_subparsers.add_parser("preflight", help="Run activation readiness preflight.")
     preflight_parser.add_argument("generated_config_file", type=Path)
+
+    dry_run_install_parser = profile_subparsers.add_parser(
+        "dry-run-install", help="Preview user-level profile installation without writing files."
+    )
+    dry_run_install_parser.add_argument("generated_config_file", type=Path)
+    dry_run_install_parser.add_argument("--user", action="store_true", help="Required user-level install target.")
+
+    install_parser = profile_subparsers.add_parser("install", help="Install generated profile to user-level PipeWire config.")
+    install_parser.add_argument("generated_config_file", type=Path)
+    install_parser.add_argument("--user", action="store_true", help="Required user-level install target.")
+    install_parser.add_argument("--confirm-install", action="store_true", help="Required to write user-level config.")
+    install_parser.add_argument(
+        "--confirm-hardware-quirk",
+        action="store_true",
+        help="Required when preflight needs hardware quirk confirmation.",
+    )
+
+    profile_subparsers.add_parser("list-installed", help="List PipeTune-installed user-level profiles.")
+    profile_subparsers.add_parser("activation-status", help="Show PipeTune profile activation status.")
+
+    rollback_parser = profile_subparsers.add_parser("rollback", help="Rollback a PipeTune-installed profile.")
+    rollback_parser.add_argument("install_id", nargs="?")
+    rollback_parser.add_argument("--latest", action="store_true", help="Rollback latest active PipeTune install.")
+    rollback_parser.add_argument("--confirm-rollback", action="store_true", help="Required to modify user-level config.")
 
     hardware_parser = subparsers.add_parser("hardware", help="Run read-only hardware quirk audits.")
     hardware_subparsers = hardware_parser.add_subparsers(dest="hardware_command")
@@ -308,6 +335,44 @@ def _cmd_profile_preflight(config_file: Path) -> int:
     return 1 if result.readiness.status == "blocked" else 0
 
 
+def _cmd_profile_dry_run_install(config_file: Path, user_level: bool) -> int:
+    result = run_install_dry_run(config_file, user_level=user_level)
+    print(render_install_dry_run(result))
+    return 0
+
+
+def _cmd_profile_install(
+    config_file: Path,
+    user_level: bool,
+    confirm_install: bool,
+    confirm_hardware_quirk: bool,
+) -> int:
+    result = install_profile(
+        config_file,
+        user_level=user_level,
+        confirm_install=confirm_install,
+        confirm_hardware_quirk=confirm_hardware_quirk,
+    )
+    print(render_install_result(result))
+    return result.exit_code
+
+
+def _cmd_profile_list_installed() -> int:
+    print(render_installed_profiles())
+    return 0
+
+
+def _cmd_profile_activation_status() -> int:
+    print(render_activation_status())
+    return 0
+
+
+def _cmd_profile_rollback(install_id: str | None, latest: bool, confirm_rollback: bool) -> int:
+    result = rollback_profile(install_id=install_id, latest=latest, confirm_rollback=confirm_rollback)
+    print(render_rollback_result(result))
+    return result.exit_code
+
+
 def _cmd_hardware_hda_audit() -> int:
     result = collect_hda_audit()
     print(render_hda_audit_summary(result))
@@ -440,6 +505,21 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_profile_safety_check(args.generated_config_file)
         if args.profile_command == "preflight":
             return _cmd_profile_preflight(args.generated_config_file)
+        if args.profile_command == "dry-run-install":
+            return _cmd_profile_dry_run_install(args.generated_config_file, args.user)
+        if args.profile_command == "install":
+            return _cmd_profile_install(
+                args.generated_config_file,
+                args.user,
+                args.confirm_install,
+                args.confirm_hardware_quirk,
+            )
+        if args.profile_command == "list-installed":
+            return _cmd_profile_list_installed()
+        if args.profile_command == "activation-status":
+            return _cmd_profile_activation_status()
+        if args.profile_command == "rollback":
+            return _cmd_profile_rollback(args.install_id, args.latest, args.confirm_rollback)
         parser.print_help()
         return 1
     if args.command == "hardware":

@@ -27,6 +27,14 @@ def manifest_path_for_config(config_file: Path) -> Path:
     return config_file.with_suffix(".manifest.json")
 
 
+def profile_id_for_config(config_file: Path) -> str:
+    name = config_file.name
+    suffix = ".filter-chain.conf"
+    if name.endswith(suffix):
+        return name[: -len(suffix)]
+    return config_file.stem
+
+
 def analyze_config_text(text: str) -> dict[str, object]:
     gains = [float(value) for value in _GAIN_RE.findall(text)]
     labels = _LABEL_RE.findall(text)
@@ -63,7 +71,7 @@ def build_profile_metadata(config_file: Path, profile_name: str, profile_type: s
     hardware_sensitive = profile_type in {"headphone", "laptop_speaker", "system"}
 
     return ProfileSafetyMetadata(
-        profile_id=config_file.stem,
+        profile_id=profile_id_for_config(config_file),
         profile_name=profile_name,
         profile_type=profile_type,
         target_device_name=profile_name,

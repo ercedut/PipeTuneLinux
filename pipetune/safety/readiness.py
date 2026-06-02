@@ -18,7 +18,7 @@ def decide_activation_readiness(
     warnings: list[str] = list(safety_check.warnings)
     next_steps = [
         "Run profile safety-check.",
-        "Use v0.3 install flow only with --confirm-install when implemented.",
+        "Use profile install only with --user --confirm-install.",
     ]
 
     if safety_check.errors:

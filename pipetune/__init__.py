@@ -1,4 +1,4 @@
 """PipeTune Linux package metadata."""
 
-__version__ = "0.2.5"
-CODENAME = "Profile Safety Metadata and Activation Preflight"
+__version__ = "0.3.0"
+CODENAME = "Safe Profile Activation"

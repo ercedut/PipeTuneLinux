@@ -27,5 +27,5 @@ A laptop speaker profile without manifest safety metadata should be blocked or r
 ## 9. Privacy and Local-Only Behavior
 Preflight reads local generated configs, manifests, and summary hardware status. It does not upload files. Hardware and mixer data may reveal device details, so review output before sharing.
 
-## 10. Future v0.3 Install Flow
-v0.3 should use preflight results as a gate. It should install only user-level config, require explicit confirmation where needed, and refuse blocked profiles.
+## 10. v0.3 Install Flow
+v0.3.0 uses preflight results as an install gate. It installs only user-level config, requires explicit confirmation, requires hardware quirk confirmation when needed, and refuses blocked or unknown profiles.
