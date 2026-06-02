@@ -31,6 +31,9 @@ verification/microphone/*.txt
 measurements/
 profiles/**/*.toml
 
+# Local plugin build artifacts
+plugins/lv2/**/*.so
+
 # Local raw hardware audits
 docs/system-audits/**/raw/
 docs/system-audits/**/*.txt

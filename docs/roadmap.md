@@ -63,7 +63,7 @@
 - Generate conservative correction draft TOML data only; no automatic profile application.
 - Treat built-in laptop microphones as approximate and uncalibrated.
 
-## v0.4.1 - Measurement Accuracy and Safety Hardening (Current)
+## v0.4.1 - Measurement Accuracy and Safety Hardening (Done)
 - Add read-only WAV inspection with clipping, silence, DC offset, sample format, channel count, and quality flags.
 - Add normalized response validation with pass/warn/fail output.
 - Harden REW import metadata and malformed-row handling.
@@ -71,7 +71,14 @@
 - Refuse correction drafts when response data quality fails.
 - Document stable machine-readable measurement fields.
 
-## v0.5 - WirePlumber Helper
+## v0.5.0 - LV2 Safeguard Plugin Foundation (Current)
+- Add local-only LV2 safeguard plugin bundle.
+- Implement conservative preamp/headroom, high-pass filtering, hard limiter, and bypass.
+- Add local plugin build and offline validation commands.
+- Keep plugin work non-mutating: no global install, no routing, no service restart.
+- Avoid enhancer, bass booster, spatializer, or mastering-suite scope.
+
+## v0.6 - WirePlumber Helper
 - Session policy helper tooling for profile routing and policy diagnostics.
 - Guardrails for non-destructive integration.
 

@@ -2,10 +2,10 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
-## v0.4.1: Measurement Accuracy and Safety Hardening
-v0.4.1 hardens the read-only measurement layer with WAV inspection, response validation, stricter correction refusal rules, and clearer machine-readable measurement fields.
+## v0.5.0: LV2 Safeguard Plugin Foundation
+v0.5.0 adds a local-only LV2 safeguard plugin foundation for conservative preamp/headroom, high-pass filtering, and hard limiting. It does not install or route the plugin automatically.
 
-## What v0.4.1 Does
+## What v0.5.0 Does
 - Keeps existing v0.1 through v0.3.1 commands working.
 - Installs generated profiles only into `~/.config/pipewire/pipewire.conf.d/`.
 - Requires `--user` and `--confirm-install` before writing user-level config.
@@ -16,8 +16,10 @@ v0.4.1 hardens the read-only measurement layer with WAV inspection, response val
 - Adds `state-doctor`, `verify-install`, dry-run repair proposals, and safe rolled-back manifest cleanup.
 - Adds `pipetune measure` commands for local measurement files and draft correction data.
 - Adds `inspect-wav` and `validate-response` for measurement trust checks.
+- Adds a local LV2 safeguard plugin bundle under `plugins/lv2/pipetune-safeguard.lv2/`.
+- Adds `pipetune plugin info`, `pipetune plugin build --local`, and `pipetune plugin validate --offline`.
 
-## What v0.4.1 Does Not Do
+## What v0.5.0 Does Not Do
 - Does not use sudo.
 - Does not write to `/etc`, `/lib`, `/sys`, `/proc`, or system audio configuration.
 - Does not restart PipeWire, WirePlumber, ALSA, or the system automatically.
@@ -26,6 +28,9 @@ v0.4.1 hardens the read-only measurement layer with WAV inspection, response val
 - Does not auto-apply generated measurement corrections.
 - Does not claim sound quality improvement without measurement output.
 - Does not improve sound directly; it improves measurement trustworthiness before any later plugin or daemon work.
+- Does not install the LV2 plugin globally.
+- Does not auto-route audio through the LV2 plugin.
+- Does not build an audio enhancer, spatializer, mastering suite, or bass booster.
 
 ## Installation
 ```bash
@@ -112,6 +117,22 @@ pipetune measure generate-correction \
 
 Measurement corrections are drafts only. PipeTune does not install them, apply them, restart services, or modify audio configuration. Response comparison reports `flatter_by_variance`; it does not claim better sound.
 
+## LV2 Safeguard Plugin
+```bash
+pipetune plugin info
+pipetune plugin build --local
+pipetune plugin validate --offline
+```
+
+The v0.5.0 plugin is a conservative local safeguard foundation: preamp/headroom, mandatory high-pass filtering, and a hard safety limiter. It is not installed globally and is not routed into PipeWire automatically.
+
+Fedora local build dependencies:
+```bash
+sudo dnf install gcc make lv2-devel
+```
+
+PipeTune never runs dependency installation automatically.
+
 ## Privacy and Safety
 - Recording requires explicit `--confirm-recording`.
 - Generated repo-local configs and manifests are ignored by default.
@@ -120,8 +141,8 @@ Measurement corrections are drafts only. PipeTune does not install them, apply t
 - Mixer and hardware audit output can reveal device details; review output before sharing publicly.
 
 ## Roadmap
-- Current: v0.4.1 Measurement Accuracy and Safety Hardening.
-- Next: v0.5 WirePlumber helper.
+- Current: v0.5.0 LV2 Safeguard Plugin Foundation.
+- Next: v0.5.x plugin validation hardening or v0.6 routing diagnostics.
 
 See [docs/roadmap.md](docs/roadmap.md).
 

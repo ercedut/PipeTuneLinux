@@ -31,6 +31,7 @@ from pipetune.measurement.rew import import_rew_csv
 from pipetune.measurement.response import render_response_validation, validate_response_csv
 from pipetune.measurement.sweep import generate_log_sweep, metadata_path_for_wav
 from pipetune.measurement.wav import inspect_wav, render_wav_diagnostics
+from pipetune.plugin.safeguard import build_plugin_local, render_offline_validation, render_plugin_info, run_offline_validation
 from pipetune.profile.autoeq_parser import parse_autoeq_file
 from pipetune.profile.pipewire_generator import write_generated_config
 from pipetune.profile.validator import validate_profile
@@ -238,6 +239,16 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["laptop-speaker", "measurement-correction"],
         help="Draft profile type (default: laptop-speaker).",
     )
+
+    plugin_parser = subparsers.add_parser("plugin", help="Local LV2 safeguard plugin tooling.")
+    plugin_subparsers = plugin_parser.add_subparsers(dest="plugin_command")
+    plugin_subparsers.add_parser("info", help="Show LV2 safeguard plugin metadata and safety notes.")
+
+    plugin_build_parser = plugin_subparsers.add_parser("build", help="Build the LV2 safeguard plugin locally.")
+    plugin_build_parser.add_argument("--local", action="store_true", help="Required; build local artifact only.")
+
+    plugin_validate_parser = plugin_subparsers.add_parser("validate", help="Run LV2 safeguard offline validation.")
+    plugin_validate_parser.add_argument("--offline", action="store_true", help="Required; run offline validation only.")
 
     return parser
 
@@ -708,6 +719,34 @@ def _cmd_measure_generate_correction(
     return 0
 
 
+def _cmd_plugin_info() -> int:
+    print(render_plugin_info())
+    return 0
+
+
+def _cmd_plugin_build(local: bool) -> int:
+    if not local:
+        print("Plugin build refused: --local is required.")
+        print("No global LV2 installation was performed.")
+        print("No system configuration was modified.")
+        return 1
+    exit_code, output = build_plugin_local()
+    print(output.rstrip())
+    print("No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration was modified.")
+    return exit_code
+
+
+def _cmd_plugin_validate(offline: bool) -> int:
+    if not offline:
+        print("Plugin validation refused: --offline is required.")
+        print("No global LV2 installation was performed.")
+        print("No system configuration was modified.")
+        return 1
+    result = run_offline_validation()
+    print(render_offline_validation(result))
+    return 0 if result.passed else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -831,6 +870,15 @@ def main(argv: list[str] | None = None) -> int:
                 args.safe,
                 args.profile_type,
             )
+        parser.print_help()
+        return 1
+    if args.command == "plugin":
+        if args.plugin_command == "info":
+            return _cmd_plugin_info()
+        if args.plugin_command == "build":
+            return _cmd_plugin_build(args.local)
+        if args.plugin_command == "validate":
+            return _cmd_plugin_validate(args.offline)
         parser.print_help()
         return 1
 

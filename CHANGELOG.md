@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.5.0] - 2026-06-02
+### Added
+- Local LV2 safeguard plugin bundle under `plugins/lv2/pipetune-safeguard.lv2/`.
+- Conservative LV2 DSP foundation with preamp/headroom, first-order high-pass filtering, hard safety limiter, and bypass.
+- New `pipetune plugin info` command.
+- New `pipetune plugin build --local` command for local-only plugin builds.
+- New `pipetune plugin validate --offline` command for offline reference DSP validation.
+- New `docs/lv2-safeguard-plugin.md` documentation.
+
+### Changed
+- Project version updated to `0.5.0`.
+- `pipetune version` codename updated to `LV2 Safeguard Plugin Foundation`.
+- README and roadmap updated for the local LV2 safeguard foundation.
+
+### Safety
+- No global LV2 installation is performed.
+- No PipeWire, WirePlumber, ALSA, service, system config, or user audio config mutation is performed.
+- No audio routing or service restart behavior was added.
+- The plugin is intentionally not an enhancer, spatializer, mastering suite, or bass booster.
+- The LV2 audio `run()` callback avoids heap allocation, file I/O, logging, dynamic allocation, and system calls.
+
 ## [0.4.1] - 2026-06-02
 ### Added
 - New `pipetune measure inspect-wav --input <wav> [--json]` command for read-only WAV diagnostics.
