@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.2.5] - 2026-06-02
+### Added
+- New `pipetune profile manifest <generated_config_file> --name <name> --type <type>` command.
+- New `pipetune profile safety-check <generated_config_file>` command.
+- New `pipetune profile preflight <generated_config_file>` command.
+- New `pipetune hardware quirk-status` command.
+- New `pipetune/safety/` package for safety metadata, manifests, preflight checks, quirk metadata, and readiness decisions.
+- New documentation:
+  - `docs/profile-safety-metadata.md`
+  - `docs/activation-preflight.md`
+
+### Changed
+- Project version updated to `0.2.5`.
+- `pipetune version` codename updated to `Profile Safety Metadata and Activation Preflight`.
+- Generated PipeWire configs now include additional safety metadata comments.
+- `.gitignore` now ignores generated manifest, preflight, and safety JSON artifacts.
+- README and roadmap updated for the preflight-only v0.2.5 scope.
+
+### Safety
+- v0.2.5 does not install, activate, or apply profiles.
+- v0.2.5 does not write to system or user PipeWire configuration.
+- Activation preflight reports readiness only: `ready`, `requires_confirmation`, `blocked`, or `unknown`.
+
 ## [0.2.4] - 2026-06-02
 ### Added
 - New `pipetune hardware gain-audit` command for read-only capture gain state inspection.

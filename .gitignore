@@ -12,6 +12,9 @@ reports/*.md
 
 # Generated PipeWire configs
 generated/*.conf
+generated/*.manifest.json
+generated/*.preflight.json
+generated/*.safety.json
 !generated/.gitkeep
 
 # Generated microphone verification files

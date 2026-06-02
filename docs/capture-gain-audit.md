@@ -3,6 +3,8 @@
 ## 1. Purpose
 PipeTune v0.2.4 adds a read-only capture gain audit for microphone gain staging. It helps explain clipping, silence, and usable signal results without changing mixer or system settings.
 
+In v0.2.5 this remains an input to activation preflight. Capture gain audit can inform hardware quirk status, but it still does not modify mixer settings.
+
 ## 2. Why Microphone Route Visibility Is Not Enough
 A visible Pulse/PipeWire source or ALSA capture device only proves that a route exists. It does not prove that the selected source, ALSA Capture, Mic Boost, Digital gain, and Pulse/PipeWire volume are staged correctly.
 

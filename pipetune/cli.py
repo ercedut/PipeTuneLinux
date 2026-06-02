@@ -22,6 +22,14 @@ from pipetune.repair.hda_plan import build_repair_context, render_hda_plan
 from pipetune.repair.mic_test_plan import render_mic_test_plan
 from pipetune.reports.json_report import write_json_report
 from pipetune.reports.markdown_report import build_markdown_report
+from pipetune.safety.manifest import create_profile_manifest, render_manifest_result
+from pipetune.safety.preflight import (
+    render_profile_preflight,
+    render_profile_safety_check,
+    run_profile_preflight,
+    run_profile_safety_check,
+)
+from pipetune.safety.quirk_status import collect_hardware_quirk_metadata, render_hardware_quirk_status
 from pipetune.verify.mic_analyze import analyze_wav_file, render_analysis_summary
 from pipetune.verify.mic_capture import capture_microphone
 from pipetune.verify.mic_plan import render_mic_verification_plan
@@ -71,12 +79,24 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output directory for generated config files (default: generated).",
     )
 
+    manifest_parser = profile_subparsers.add_parser("manifest", help="Create safety manifest for generated config.")
+    manifest_parser.add_argument("generated_config_file", type=Path)
+    manifest_parser.add_argument("--name", required=True, help="Profile display name.")
+    manifest_parser.add_argument("--type", required=True, dest="profile_type", help="Profile type.")
+
+    safety_parser = profile_subparsers.add_parser("safety-check", help="Check generated profile safety metadata.")
+    safety_parser.add_argument("generated_config_file", type=Path)
+
+    preflight_parser = profile_subparsers.add_parser("preflight", help="Run activation readiness preflight.")
+    preflight_parser.add_argument("generated_config_file", type=Path)
+
     hardware_parser = subparsers.add_parser("hardware", help="Run read-only hardware quirk audits.")
     hardware_subparsers = hardware_parser.add_subparsers(dest="hardware_command")
 
     hardware_subparsers.add_parser("hda-audit", help="Audit HDA codec/pin retask indicators.")
     hardware_subparsers.add_parser("mic-audit", help="Audit microphone and capture route visibility.")
     hardware_subparsers.add_parser("gain-audit", help="Audit read-only capture gain state.")
+    hardware_subparsers.add_parser("quirk-status", help="Show activation-related hardware quirk status.")
 
     quirk_report_parser = hardware_subparsers.add_parser(
         "quirk-report", help="Create a local hardware quirk documentation bundle."
@@ -270,6 +290,24 @@ def _cmd_profile_generate(autoeq_file: Path, profile_name: str, output_dir: Path
     return 0
 
 
+def _cmd_profile_manifest(config_file: Path, profile_name: str, profile_type: str) -> int:
+    manifest_path, _manifest, errors = create_profile_manifest(config_file, profile_name, profile_type)
+    print(render_manifest_result(manifest_path, errors))
+    return 1 if errors else 0
+
+
+def _cmd_profile_safety_check(config_file: Path) -> int:
+    check = run_profile_safety_check(config_file)
+    print(render_profile_safety_check(check))
+    return 1 if check.errors else 0
+
+
+def _cmd_profile_preflight(config_file: Path) -> int:
+    result = run_profile_preflight(config_file)
+    print(render_profile_preflight(result))
+    return 1 if result.readiness.status == "blocked" else 0
+
+
 def _cmd_hardware_hda_audit() -> int:
     result = collect_hda_audit()
     print(render_hda_audit_summary(result))
@@ -285,6 +323,12 @@ def _cmd_hardware_mic_audit() -> int:
 def _cmd_hardware_gain_audit() -> int:
     result = collect_gain_audit()
     print(render_gain_audit(result))
+    return 0
+
+
+def _cmd_hardware_quirk_status() -> int:
+    result = collect_hardware_quirk_metadata()
+    print(render_hardware_quirk_status(result))
     return 0
 
 
@@ -390,6 +434,12 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_profile_validate(args.autoeq_file)
         if args.profile_command == "generate":
             return _cmd_profile_generate(args.autoeq_file, args.name, args.output)
+        if args.profile_command == "manifest":
+            return _cmd_profile_manifest(args.generated_config_file, args.name, args.profile_type)
+        if args.profile_command == "safety-check":
+            return _cmd_profile_safety_check(args.generated_config_file)
+        if args.profile_command == "preflight":
+            return _cmd_profile_preflight(args.generated_config_file)
         parser.print_help()
         return 1
     if args.command == "hardware":
@@ -399,6 +449,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_hardware_mic_audit()
         if args.hardware_command == "gain-audit":
             return _cmd_hardware_gain_audit()
+        if args.hardware_command == "quirk-status":
+            return _cmd_hardware_quirk_status()
         if args.hardware_command == "quirk-report":
             return _cmd_hardware_quirk_report(args.output)
         parser.print_help()

@@ -28,14 +28,21 @@
 - Keep recordings local-only and gitignored.
 - Do not repair microphone routing automatically.
 
-## v0.2.4 - Capture Gain State Audit (Current)
+## v0.2.4 - Capture Gain State Audit (Done)
 - Add read-only capture gain audit for Pulse/PipeWire source volume, mute state, wpctl volume, and ALSA card 0 mixer controls.
 - Interpret clipping, silence, and usable signal as gain-staging evidence without claiming permanent repair.
 - Print manual-only gain tuning plans and test matrices.
 - Keep all commands non-destructive: no mixer changes, no service restarts, no ALSA state storage.
 
-## v0.3 - Safe Device Profile Expansion
-- Safe speaker/headphone profile generation workflow.
+## v0.2.5 - Profile Safety Metadata and Activation Preflight (Current)
+- Add generated profile manifests and safety metadata.
+- Add profile safety-check and activation preflight commands.
+- Add hardware quirk status for future profile activation.
+- Decide whether future activation is ready, requires confirmation, blocked, or unknown.
+- Keep all behavior preflight-only: no install, no activation, no PipeWire config writes.
+
+## v0.3 - Safe Profile Activation
+- Safe user-level profile installation workflow with explicit confirmation.
 - Optional EasyEffects exporter for generated profile data.
 - Hardware-quirk-aware profile activation guardrails.
 
