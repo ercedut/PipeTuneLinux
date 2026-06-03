@@ -1,4 +1,4 @@
 """PipeTune Linux package metadata."""
 
-__version__ = "0.5.0"
-CODENAME = "LV2 Safeguard Plugin Foundation"
+__version__ = "0.5.1"
+CODENAME = "LV2 Build, Metadata, and RT-Safety Hardening"

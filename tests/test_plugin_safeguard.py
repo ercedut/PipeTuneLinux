@@ -4,7 +4,16 @@ import math
 from pathlib import Path
 
 from pipetune import cli
-from pipetune.plugin.safeguard import PLUGIN_DIR, db_to_gain, process_reference, run_offline_validation
+from pipetune.plugin import safeguard
+from pipetune.plugin.safeguard import (
+    PLUGIN_DIR,
+    db_to_gain,
+    process_reference,
+    render_metadata_validation,
+    run_metadata_validation,
+    run_offline_validation,
+    run_rt_safety_validation,
+)
 
 
 def _sine(frequency_hz: float, *, sample_rate: int = 48000, duration_seconds: float = 1.0, amplitude: float = 0.5) -> list[float]:
@@ -47,15 +56,33 @@ def test_makefile_build_is_local_and_install_refuses_global_install() -> None:
     makefile = (PLUGIN_DIR / "Makefile").read_text(encoding="utf-8")
 
     assert "pipetune_safeguard.so" in makefile
+    assert "pipetune_safeguard.o" in makefile
     assert "lv2-devel" in makefile
+    assert "-Wall" in makefile
+    assert "-Wextra" in makefile
+    assert "-Werror" in makefile
+    assert "-fPIC" in makefile
+    assert "check:" in makefile
     assert "Global install is intentionally unsupported" in makefile
+
+
+def test_gitignore_excludes_local_plugin_build_artifacts() -> None:
+    gitignore = Path(".gitignore").read_text(encoding="utf-8")
+
+    assert "plugins/lv2/**/*.so" in gitignore
+    assert "plugins/lv2/**/*.o" in gitignore
+    assert "plugins/lv2/**/*.d" in gitignore
+    assert "plugins/lv2/**/*.tmp" in gitignore
 
 
 def test_plugin_build_command_is_documented() -> None:
     doc = Path("docs/lv2-safeguard-plugin.md").read_text(encoding="utf-8")
 
     assert "pipetune plugin build --local" in doc
+    assert "pipetune plugin clean --local" in doc
     assert "pipetune plugin validate --offline" in doc
+    assert "pipetune plugin validate --metadata" in doc
+    assert "pipetune plugin validate --rt-safety" in doc
     assert "lv2-devel" in doc
 
 
@@ -103,6 +130,50 @@ def test_reference_bypass_preserves_input_within_tolerance() -> None:
     assert max(abs(a - b) for a, b in zip(out_r, signal)) < 1e-12
 
 
+def test_reference_control_boundaries_are_clamped() -> None:
+    signal = _sine(1000.0, amplitude=0.5)
+
+    below_preamp, _ = process_reference(signal, signal, preamp_db=-100.0)
+    min_preamp, _ = process_reference(signal, signal, preamp_db=-24.0)
+    above_preamp, _ = process_reference(signal, signal, preamp_db=12.0)
+    max_preamp, _ = process_reference(signal, signal, preamp_db=0.0)
+
+    assert below_preamp == min_preamp
+    assert above_preamp == max_preamp
+
+    below_hp, _ = process_reference(signal, signal, highpass_hz=1.0)
+    min_hp, _ = process_reference(signal, signal, highpass_hz=60.0)
+    above_hp, _ = process_reference(signal, signal, highpass_hz=1000.0)
+    max_hp, _ = process_reference(signal, signal, highpass_hz=250.0)
+
+    assert below_hp == min_hp
+    assert above_hp == max_hp
+
+    below_limiter, _ = process_reference(signal, signal, preamp_db=0.0, limiter_ceiling_db=-99.0)
+    min_limiter, _ = process_reference(signal, signal, preamp_db=0.0, limiter_ceiling_db=-12.0)
+    above_limiter, _ = process_reference(signal, signal, preamp_db=0.0, limiter_ceiling_db=3.0)
+    max_limiter, _ = process_reference(signal, signal, preamp_db=0.0, limiter_ceiling_db=-0.1)
+
+    assert below_limiter == min_limiter
+    assert above_limiter == max_limiter
+
+
+def test_reference_invalid_controls_do_not_crash_and_limiter_stays_safe() -> None:
+    signal = _sine(1000.0, amplitude=2.0)
+
+    out_l, out_r = process_reference(
+        signal,
+        signal,
+        preamp_db=math.nan,
+        highpass_hz=math.nan,
+        limiter_ceiling_db=math.nan,
+        bypass=-1.0,
+    )
+
+    ceiling = db_to_gain(-1.0) + 1e-9
+    assert max(abs(sample) for sample in out_l + out_r) <= ceiling
+
+
 def test_offline_validation_passes_and_does_not_install() -> None:
     result = run_offline_validation()
 
@@ -111,7 +182,92 @@ def test_offline_validation_passes_and_does_not_install() -> None:
     assert any("did not install" in check for check in result.checks)
 
 
-def test_plugin_cli_info_and_validate(capsys) -> None:
+def test_metadata_validation_passes_or_warns_only_for_optional_lv2_validate(monkeypatch) -> None:
+    monkeypatch.setattr(safeguard.shutil, "which", lambda command: None if command == "lv2_validate" else "/usr/bin/tool")
+
+    report = run_metadata_validation()
+    rendered = render_metadata_validation(report)
+
+    assert report.passed is True
+    assert "manifest.ttl exists" in rendered
+    assert "plugin URI is consistent" in rendered
+    assert "lv2_validate is not installed" in rendered
+
+
+def test_metadata_validation_json_output(monkeypatch) -> None:
+    monkeypatch.setattr(safeguard.shutil, "which", lambda command: None if command == "lv2_validate" else "/usr/bin/tool")
+
+    rendered = render_metadata_validation(run_metadata_validation(), json_output=True)
+
+    assert '"passed": true' in rendered
+    assert '"safety": [' in rendered
+
+
+def test_rt_safety_validation_passes_for_current_source() -> None:
+    report = run_rt_safety_validation()
+
+    assert report.passed is True
+    assert any("run() contains no obvious" in check for check in report.checks)
+    assert any("preamp_db" in check for check in report.checks)
+
+
+def test_rt_safety_validation_ignores_comments_and_fails_for_run_calls(tmp_path: Path) -> None:
+    source = tmp_path / "bad.c"
+    source.write_text(
+        """
+        // malloc() in a comment must not count.
+        static void run(LV2_Handle instance, uint32_t sample_count) {
+            (void)instance;
+            (void)sample_count;
+            printf("bad");
+            malloc(4);
+        }
+        static float clampf(float value, float minimum, float maximum, float fallback) { return value; }
+        """,
+        encoding="utf-8",
+    )
+
+    report = run_rt_safety_validation(source)
+
+    assert report.passed is False
+    assert any("printf" in error and "malloc" in error for error in report.errors)
+
+
+def test_plugin_clean_command_removes_artifacts_only(tmp_path: Path, monkeypatch) -> None:
+    plugin_dir = tmp_path / "pipetune-safeguard.lv2"
+    plugin_dir.mkdir()
+    for source_name in safeguard.SOURCE_FILES:
+        (plugin_dir / source_name).write_text("source", encoding="utf-8")
+    for artifact_name in ("pipetune_safeguard.so", "pipetune_safeguard.o", "scratch.d", "scratch.tmp"):
+        (plugin_dir / artifact_name).write_text("artifact", encoding="utf-8")
+    monkeypatch.setattr(safeguard, "PLUGIN_DIR", plugin_dir)
+
+    exit_code = cli.main(["plugin", "clean", "--local"])
+
+    assert exit_code == 0
+    for artifact_name in ("pipetune_safeguard.so", "pipetune_safeguard.o", "scratch.d", "scratch.tmp"):
+        assert not (plugin_dir / artifact_name).exists()
+    for source_name in safeguard.SOURCE_FILES:
+        assert (plugin_dir / source_name).exists()
+
+
+def test_build_dependency_detection_reports_fedora_instructions(monkeypatch) -> None:
+    monkeypatch.setattr(safeguard.shutil, "which", lambda _command: None)
+    monkeypatch.setattr(safeguard, "_lv2_headers_available", lambda: False)
+
+    exit_code, output = safeguard.build_plugin_local()
+
+    assert exit_code == 1
+    assert "Missing build dependency: gcc" in output
+    assert "Missing build dependency: make" in output
+    assert "lv2-devel" in output
+    assert "sudo dnf install gcc make lv2-devel" in output
+    assert "PipeTune did not run sudo or install packages." in output
+
+
+def test_plugin_cli_info_validate_and_safety_disclaimers(capsys, monkeypatch) -> None:
+    monkeypatch.setattr(safeguard.shutil, "which", lambda command: None if command == "lv2_validate" else "/usr/bin/tool")
+
     info_exit = cli.main(["plugin", "info"])
     info = capsys.readouterr().out
 
@@ -119,6 +275,7 @@ def test_plugin_cli_info_and_validate(capsys) -> None:
     assert "PipeTune LV2 Plugin" in info
     assert "safeguard" in info.lower()
     assert "does not install" in info
+    assert "No audio routing was changed." in info
 
     validate_exit = cli.main(["plugin", "validate", "--offline"])
     validation = capsys.readouterr().out
@@ -126,6 +283,21 @@ def test_plugin_cli_info_and_validate(capsys) -> None:
     assert validate_exit == 0
     assert "Final verdict: pass" in validation
     assert "No global LV2 installation was performed." in validation
+    assert "No audio routing was changed." in validation
+
+    metadata_exit = cli.main(["plugin", "validate", "--metadata"])
+    metadata = capsys.readouterr().out
+
+    assert metadata_exit == 0
+    assert "Metadata Validation" in metadata
+    assert "No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration was modified." in metadata
+
+    rt_exit = cli.main(["plugin", "validate", "--rt-safety"])
+    rt_output = capsys.readouterr().out
+
+    assert rt_exit == 0
+    assert "RT-Safety Validation" in rt_output
+    assert "No audio routing was changed." in rt_output
 
 
 def test_plugin_cli_requires_local_and_offline_flags(capsys) -> None:
@@ -133,9 +305,12 @@ def test_plugin_cli_requires_local_and_offline_flags(capsys) -> None:
     build_output = capsys.readouterr().out
     validate_exit = cli.main(["plugin", "validate"])
     validate_output = capsys.readouterr().out
+    clean_exit = cli.main(["plugin", "clean"])
+    clean_output = capsys.readouterr().out
 
     assert build_exit == 1
     assert "--local is required" in build_output
     assert validate_exit == 1
-    assert "--offline is required" in validate_output
-
+    assert "choose exactly one" in validate_output
+    assert clean_exit == 1
+    assert "--local is required" in clean_output

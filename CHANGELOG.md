@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.5.1] - 2026-06-03
+### Added
+- New `pipetune plugin clean --local` command for local LV2 build artifact cleanup.
+- New `pipetune plugin validate --metadata` command with optional `--json` output.
+- New `pipetune plugin validate --rt-safety` command for static checks of the LV2 `run()` callback path.
+- Compiled plugin offline validation is attempted when the local `.so` artifact exists.
+- Tests for plugin clean behavior, dependency messaging, metadata validation, RT-safety validation, build artifact hygiene, safety disclaimers, and boundary controls.
+
+### Changed
+- Project version updated to `0.5.1`.
+- `pipetune version` codename updated to `LV2 Build, Metadata, and RT-Safety Hardening`.
+- `pipetune plugin build --local` now checks for `gcc`, `make`, and LV2 headers before invoking `make`.
+- Local build output now states where artifacts are produced.
+- `.gitignore` now excludes local LV2 `.so`, `.o`, dependency, and temporary build artifacts.
+- Makefile now builds an object file, supports `make`, `make clean`, and `make check`, and keeps strict warning flags.
+
+### Safety
+- No global LV2 installation is performed.
+- No audio routing is changed.
+- No PipeWire, WirePlumber, ALSA, service, system config, or user audio config mutation is performed.
+- Build dependency instructions are printed for Fedora but PipeTune does not run `sudo` or install packages.
+- `lv2_validate` is optional: if unavailable, metadata validation warns instead of failing automatically.
+- DSP scope remains unchanged: preamp/headroom, high-pass filter, hard safety limiter, and bypass only.
+
 ## [0.5.0] - 2026-06-02
 ### Added
 - Local LV2 safeguard plugin bundle under `plugins/lv2/pipetune-safeguard.lv2/`.

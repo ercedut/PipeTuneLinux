@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pipetune-linux"
-version = "0.5.0"
-description = "PipeTune Linux diagnostics, safe profile generation, activation safety, measurement tooling, and local LV2 safeguard plugin foundation CLI"
+version = "0.5.1"
+description = "PipeTune Linux diagnostics, safe profile generation, activation safety, measurement tooling, and local LV2 safeguard plugin hardening CLI"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [

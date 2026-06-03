@@ -31,7 +31,19 @@ from pipetune.measurement.rew import import_rew_csv
 from pipetune.measurement.response import render_response_validation, validate_response_csv
 from pipetune.measurement.sweep import generate_log_sweep, metadata_path_for_wav
 from pipetune.measurement.wav import inspect_wav, render_wav_diagnostics
-from pipetune.plugin.safeguard import build_plugin_local, render_offline_validation, render_plugin_info, run_offline_validation
+from pipetune.plugin.safeguard import (
+    clean_plugin_local,
+    build_plugin_local,
+    render_clean_result,
+    render_metadata_validation,
+    render_offline_validation,
+    render_plugin_info,
+    render_plugin_safety_disclaimer,
+    render_rt_safety_validation,
+    run_metadata_validation,
+    run_offline_validation,
+    run_rt_safety_validation,
+)
 from pipetune.profile.autoeq_parser import parse_autoeq_file
 from pipetune.profile.pipewire_generator import write_generated_config
 from pipetune.profile.validator import validate_profile
@@ -247,8 +259,14 @@ def _build_parser() -> argparse.ArgumentParser:
     plugin_build_parser = plugin_subparsers.add_parser("build", help="Build the LV2 safeguard plugin locally.")
     plugin_build_parser.add_argument("--local", action="store_true", help="Required; build local artifact only.")
 
-    plugin_validate_parser = plugin_subparsers.add_parser("validate", help="Run LV2 safeguard offline validation.")
+    plugin_clean_parser = plugin_subparsers.add_parser("clean", help="Remove local LV2 safeguard build artifacts.")
+    plugin_clean_parser.add_argument("--local", action="store_true", help="Required; clean local artifacts only.")
+
+    plugin_validate_parser = plugin_subparsers.add_parser("validate", help="Run LV2 safeguard validation checks.")
     plugin_validate_parser.add_argument("--offline", action="store_true", help="Required; run offline validation only.")
+    plugin_validate_parser.add_argument("--metadata", action="store_true", help="Validate LV2 TTL metadata.")
+    plugin_validate_parser.add_argument("--rt-safety", action="store_true", help="Run static RT-safety checks on the LV2 source.")
+    plugin_validate_parser.add_argument("--json", action="store_true", help="Print JSON for metadata validation.")
 
     return parser
 
@@ -727,21 +745,45 @@ def _cmd_plugin_info() -> int:
 def _cmd_plugin_build(local: bool) -> int:
     if not local:
         print("Plugin build refused: --local is required.")
-        print("No global LV2 installation was performed.")
-        print("No system configuration was modified.")
+        print(render_plugin_safety_disclaimer())
         return 1
     exit_code, output = build_plugin_local()
     print(output.rstrip())
-    print("No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration was modified.")
+    if "No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration was modified." not in output:
+        print(render_plugin_safety_disclaimer())
     return exit_code
 
 
-def _cmd_plugin_validate(offline: bool) -> int:
-    if not offline:
-        print("Plugin validation refused: --offline is required.")
-        print("No global LV2 installation was performed.")
-        print("No system configuration was modified.")
+def _cmd_plugin_clean(local: bool) -> int:
+    if not local:
+        print("Plugin clean refused: --local is required.")
+        print(render_plugin_safety_disclaimer())
         return 1
+    result = clean_plugin_local()
+    print(render_clean_result(result))
+    return 0 if not result.errors else 1
+
+
+def _cmd_plugin_validate(offline: bool, metadata: bool, rt_safety: bool, json_output: bool) -> int:
+    selected = [offline, metadata, rt_safety]
+    if sum(1 for item in selected if item) != 1:
+        print("Plugin validation refused: choose exactly one of --offline, --metadata, or --rt-safety.")
+        print(render_plugin_safety_disclaimer())
+        return 1
+    if json_output and not metadata:
+        print("Plugin validation refused: --json is supported with --metadata only.")
+        print(render_plugin_safety_disclaimer())
+        return 1
+
+    if metadata:
+        report = run_metadata_validation()
+        print(render_metadata_validation(report, json_output=json_output))
+        return 0 if report.passed else 1
+    if rt_safety:
+        report = run_rt_safety_validation()
+        print(render_rt_safety_validation(report))
+        return 0 if report.passed else 1
+
     result = run_offline_validation()
     print(render_offline_validation(result))
     return 0 if result.passed else 1
@@ -877,8 +919,10 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_plugin_info()
         if args.plugin_command == "build":
             return _cmd_plugin_build(args.local)
+        if args.plugin_command == "clean":
+            return _cmd_plugin_clean(args.local)
         if args.plugin_command == "validate":
-            return _cmd_plugin_validate(args.offline)
+            return _cmd_plugin_validate(args.offline, args.metadata, args.rt_safety, args.json)
         parser.print_help()
         return 1
 

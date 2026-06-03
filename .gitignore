@@ -33,6 +33,10 @@ profiles/**/*.toml
 
 # Local plugin build artifacts
 plugins/lv2/**/*.so
+plugins/lv2/**/*.o
+plugins/lv2/**/*.d
+plugins/lv2/**/*.tmp
+plugins/lv2/**/*~
 
 # Local raw hardware audits
 docs/system-audits/**/raw/

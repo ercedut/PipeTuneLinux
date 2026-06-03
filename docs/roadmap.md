@@ -71,12 +71,21 @@
 - Refuse correction drafts when response data quality fails.
 - Document stable machine-readable measurement fields.
 
-## v0.5.0 - LV2 Safeguard Plugin Foundation (Current)
+## v0.5.0 - LV2 Safeguard Plugin Foundation (Done)
 - Add local-only LV2 safeguard plugin bundle.
 - Implement conservative preamp/headroom, high-pass filtering, hard limiter, and bypass.
 - Add local plugin build and offline validation commands.
 - Keep plugin work non-mutating: no global install, no routing, no service restart.
 - Avoid enhancer, bass booster, spatializer, or mastering-suite scope.
+
+## v0.5.1 - LV2 Build, Metadata, and RT-Safety Hardening (Current)
+- Harden local LV2 build dependency checks and Fedora error guidance.
+- Add local build artifact cleanup and gitignore coverage for `.so`, `.o`, dependency, and temporary files.
+- Add metadata validation for TTL files, plugin URI consistency, port documentation, and control ranges.
+- Run optional `lv2_validate` when available without making it mandatory.
+- Add RT-safety static checks focused on the LV2 `run()` callback path.
+- Attempt compiled `.so` offline validation when a local build artifact is present.
+- Keep DSP scope unchanged and keep plugin work non-mutating.
 
 ## v0.6 - WirePlumber Helper
 - Session policy helper tooling for profile routing and policy diagnostics.
