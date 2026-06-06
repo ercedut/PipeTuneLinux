@@ -32,10 +32,12 @@ from pipetune.measurement.response import render_response_validation, validate_r
 from pipetune.measurement.sweep import generate_log_sweep, metadata_path_for_wav
 from pipetune.measurement.wav import inspect_wav, render_wav_diagnostics
 from pipetune.packaging import (
+    render_clean_local_report,
     render_package_report,
     render_package_report_json,
     run_package_artifact_check,
     run_package_build_check,
+    run_package_clean_local,
     run_package_inspect,
     run_package_smoke_test,
 )
@@ -302,6 +304,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "artifact-check", help="Check repo for forbidden artifacts that must not be staged or committed."
     )
     artifact_check_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    clean_local_parser = package_subparsers.add_parser(
+        "clean-local", help="Remove safe local development artifacts (caches, egg-info, dist, build, compiled plugin artifacts)."
+    )
+    clean_local_parser.add_argument("--dry-run", action="store_true", help="Print planned removals without removing anything.")
 
     release_parser = subparsers.add_parser("release", help="Release quality gate checks.")
     release_subparsers = release_parser.add_subparsers(dest="release_command")
@@ -867,6 +874,12 @@ def _cmd_package_smoke_test() -> int:
     return 0 if report.passed else 1
 
 
+def _cmd_package_clean_local(dry_run: bool) -> int:
+    report = run_package_clean_local(dry_run=dry_run)
+    print(render_clean_local_report(report))
+    return 1 if report.errors else 0
+
+
 def _cmd_package_artifact_check(json_output: bool) -> int:
     report = run_package_artifact_check()
     if json_output:
@@ -1060,6 +1073,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_package_smoke_test()
         if args.package_command == "artifact-check":
             return _cmd_package_artifact_check(args.json)
+        if args.package_command == "clean-local":
+            return _cmd_package_clean_local(args.dry_run)
         parser.print_help()
         return 1
     if args.command == "release":

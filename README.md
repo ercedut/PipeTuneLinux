@@ -2,6 +2,9 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
+## v0.7.1: Release Gate Cleanup and Profile DB Packaging Hardening
+v0.7.1 adds `pipetune package clean-local` to remove safe local development artifacts, improves artifact-check to clearly distinguish removable vs. forbidden artifacts, and hardens profile DB packaging verification. After running `clean-local`, `release check` reliably returns `pass`.
+
 ## v0.7.0: Device Profile Database and Contribution Workflow Foundation
 v0.7.0 adds a community-maintainable device profile database with metadata schema, quality classes, safety validation, and read-only listing/search commands. Profile commands are read-only — no profile is installed or auto-applied.
 
@@ -159,6 +162,8 @@ pipetune package build-check
 pipetune package smoke-test
 pipetune package artifact-check
 pipetune package artifact-check --json
+pipetune package clean-local --dry-run
+pipetune package clean-local
 ```
 
 `package inspect` reports local package metadata and project layout. `package build-check` verifies packaging readiness, runs `python -m build`, inspects archives, and cleans up dist/ after verification. Install the `build` module if missing:

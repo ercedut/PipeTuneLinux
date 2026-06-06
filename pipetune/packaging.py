@@ -6,13 +6,14 @@ import fnmatch
 import importlib.metadata
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
 import tomllib
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pipetune
@@ -80,6 +81,15 @@ class PackageReport:
         if self.warnings:
             return "warn"
         return "pass"
+
+
+@dataclass(slots=True)
+class CleanLocalReport:
+    dry_run: bool
+    removed: list[str] = field(default_factory=list)
+    planned: list[str] = field(default_factory=list)
+    skipped: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
 
 def run_package_inspect() -> PackageReport:
@@ -181,6 +191,7 @@ def run_package_build_check() -> PackageReport:
         checks.append("no compiled LV2 or temporary plugin artifacts found in source tree")
 
     _check_gitignore_patterns(checks, errors)
+    _check_profile_db_presence(checks, errors)
 
     if importlib.util.find_spec("build") is None:
         warnings.append("python build module is not installed; install with: python -m pip install build")
@@ -232,6 +243,98 @@ def run_package_smoke_test_with_runner(runner) -> PackageReport:
     return PackageReport(passed=not errors, checks=checks, warnings=warnings, errors=errors)
 
 
+_CLEAN_PROTECTED_DIRS = frozenset({
+    "profiles",
+})
+
+_CLEAN_COMPILED_PLUGIN_EXTENSIONS = (".so", ".o", ".d", ".tmp")
+
+
+def run_package_clean_local(dry_run: bool = False) -> CleanLocalReport:
+    report = CleanLocalReport(dry_run=dry_run)
+    candidates: list[Path] = []
+
+    for pycache_dir in REPO_ROOT.rglob("__pycache__"):
+        if ".venv" not in str(pycache_dir) and pycache_dir.is_dir():
+            candidates.append(pycache_dir)
+
+    pytest_cache = REPO_ROOT / ".pytest_cache"
+    if pytest_cache.is_dir():
+        candidates.append(pytest_cache)
+
+    for egg_info_dir in REPO_ROOT.glob("*.egg-info"):
+        if egg_info_dir.is_dir():
+            candidates.append(egg_info_dir)
+
+    for dir_name in ("dist", "build"):
+        artifact_dir = REPO_ROOT / dir_name
+        if artifact_dir.is_dir():
+            candidates.append(artifact_dir)
+
+    for ext in _CLEAN_COMPILED_PLUGIN_EXTENSIONS:
+        for artifact in PLUGIN_SOURCE_DIR.glob(f"*{ext}"):
+            if artifact.is_file():
+                candidates.append(artifact)
+
+    for candidate in candidates:
+        rel = candidate.relative_to(REPO_ROOT)
+        rel_str = str(rel)
+        if not _safe_to_clean(candidate):
+            report.skipped.append(rel_str)
+            continue
+        if dry_run:
+            report.planned.append(rel_str)
+        else:
+            try:
+                if candidate.is_dir():
+                    shutil.rmtree(candidate)
+                else:
+                    candidate.unlink()
+                report.removed.append(rel_str)
+            except OSError as exc:
+                report.errors.append(f"failed to remove {rel_str}: {exc}")
+
+    return report
+
+
+def _safe_to_clean(path: Path) -> bool:
+    try:
+        rel = path.relative_to(REPO_ROOT)
+    except ValueError:
+        return False
+    parts = rel.parts
+    if parts and parts[0] in _CLEAN_PROTECTED_DIRS:
+        return False
+    return True
+
+
+def render_clean_local_report(report: CleanLocalReport) -> str:
+    lines = ["PipeTune Package Clean Local"]
+    if report.dry_run:
+        lines.append("(dry-run: no files will be removed)")
+    lines.append("")
+    if report.dry_run:
+        if report.planned:
+            lines.append("Planned removals:")
+            lines.extend(f"  {item}" for item in sorted(report.planned))
+        else:
+            lines.append("Nothing to remove.")
+    else:
+        if report.removed:
+            lines.append("Removed:")
+            lines.extend(f"  {item}" for item in sorted(report.removed))
+        else:
+            lines.append("Nothing to remove.")
+    if report.skipped:
+        lines.append("Skipped (protected):")
+        lines.extend(f"  {item}" for item in sorted(report.skipped))
+    if report.errors:
+        lines.append("Errors:")
+        lines.extend(f"  {item}" for item in report.errors)
+    lines.extend(["", *PACKAGE_SAFETY_DISCLAIMER])
+    return "\n".join(lines)
+
+
 STAGED_FORBIDDEN_PATTERNS = (
     ("*.so", "compiled shared object"),
     ("*.o", "compiled object file"),
@@ -269,7 +372,7 @@ def run_package_artifact_check() -> PackageReport:
         warnings.append(
             "*.egg-info/ directories found: "
             + ", ".join(p.name for p in egg_info_dirs)
-            + " (gitignored development artifact)"
+            + " (gitignored development artifact; run: pipetune package clean-local)"
         )
     else:
         checks.append("no *.egg-info/ directories")
@@ -279,12 +382,15 @@ def run_package_artifact_check() -> PackageReport:
         if ".venv" not in str(p) and p.is_dir()
     ]
     if pycache_dirs:
-        warnings.append(f"__pycache__/ directories found ({len(pycache_dirs)} outside .venv); gitignored")
+        checks.append(
+            f"__pycache__/ directories present ({len(pycache_dirs)} outside .venv); "
+            "gitignored; use: pipetune package clean-local to remove"
+        )
     else:
         checks.append("no __pycache__/ directories outside .venv")
 
     if (REPO_ROOT / ".pytest_cache").is_dir():
-        warnings.append(".pytest_cache/ directory found; gitignored but present")
+        checks.append(".pytest_cache/ directory present; gitignored; use: pipetune package clean-local to remove")
     else:
         checks.append("no .pytest_cache/ directory")
 
@@ -420,6 +526,32 @@ def _local_forbidden_artifacts() -> list[Path]:
     return sorted(set(artifacts))
 
 
+def _check_profile_db_presence(checks: list[str], errors: list[str]) -> None:
+    profiles_dir = REPO_ROOT / "profiles"
+    if not profiles_dir.is_dir():
+        errors.append("profiles/ directory is missing from source tree")
+        return
+    toml_files = [
+        p for p in profiles_dir.rglob("*.toml")
+        if "templates" not in p.parts
+    ]
+    if not toml_files:
+        errors.append("profiles/ directory has no .toml profile files")
+    else:
+        checks.append(f"profile database present: {len(toml_files)} profile(s) found in profiles/")
+    manifest_in = REPO_ROOT / "MANIFEST.in"
+    if manifest_in.exists():
+        manifest_text = manifest_in.read_text(encoding="utf-8")
+        if "recursive-include profiles *.toml" in manifest_text:
+            checks.append("MANIFEST.in includes profile database .toml files")
+        else:
+            errors.append("MANIFEST.in is missing: recursive-include profiles *.toml")
+        if "recursive-include profiles *.md" in manifest_text:
+            checks.append("MANIFEST.in includes profile database .md files")
+        else:
+            errors.append("MANIFEST.in is missing: recursive-include profiles *.md")
+
+
 def _check_gitignore_patterns(checks: list[str], errors: list[str]) -> None:
     gitignore = REPO_ROOT / ".gitignore"
     if not gitignore.exists():
@@ -488,6 +620,12 @@ def _attempt_local_build() -> tuple[list[str], list[str], list[str]]:
             dist_dir.rmdir()
         except OSError:
             pass
+    for egg_info in list(REPO_ROOT.glob("*.egg-info")):
+        if egg_info.is_dir():
+            try:
+                shutil.rmtree(egg_info)
+            except OSError:
+                pass
     checks.append("build artifacts cleaned up after inspection")
 
     return checks, warnings, errors

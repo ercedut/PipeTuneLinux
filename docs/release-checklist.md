@@ -17,6 +17,17 @@ Use this checklist before tagging a PipeTune Linux release.
 - **Do not tag with a failing release check.** If `pipetune release check` reports fail, fix the issue first.
 - **Do not claim audio improvement without measurement evidence.** Profiles without source documentation are rejected.
 
+## Cleaning Local Development Artifacts Before Release
+
+Before running the release check, clean up gitignored local development artifacts:
+
+```bash
+pipetune package clean-local --dry-run
+pipetune package clean-local
+```
+
+`clean-local` removes: `__pycache__/`, `.pytest_cache/`, `*.egg-info/`, `dist/`, `build/`, and compiled plugin artifacts (`.so`, `.o`). It does not remove source files, docs, profile database files, test files, or LV2 source files.
+
 ## Local Verification
 
 Run in sequence. Stop if any step fails.
@@ -24,6 +35,7 @@ Run in sequence. Stop if any step fails.
 ```bash
 git status --short
 python -m pytest -q
+pipetune package clean-local
 pipetune release check
 pipetune package artifact-check
 pipetune profiles validate-db
@@ -41,6 +53,7 @@ pipetune package inspect
 pipetune package build-check
 pipetune package smoke-test
 pipetune package artifact-check
+pipetune package clean-local --dry-run
 pipetune plugin validate --metadata
 pipetune plugin validate --rt-safety
 ```

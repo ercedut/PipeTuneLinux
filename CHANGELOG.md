@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.7.1] - 2026-06-06
+### Added
+- New `pipetune package clean-local` command: removes safe local development artifacts (`__pycache__/`, `.pytest_cache/`, `*.egg-info/`, `dist/`, `build/`, compiled plugin `.so`/`.o`).
+- `pipetune package clean-local --dry-run`: shows planned removals without removing anything.
+- Profile DB presence and MANIFEST.in inclusion checks added to `pipetune package build-check`.
+- `pipetune release check` now recommends `pipetune package clean-local` when only removable local artifacts are causing a warn verdict.
+- `pipetune package build-check` now also cleans up `*.egg-info/` directories after build inspection (in addition to `dist/`).
+
+### Changed
+- `__pycache__/` and `.pytest_cache/` directories are now informational checks (not warnings) in `pipetune package artifact-check`; they are always gitignored and always present during normal development.
+- `*.egg-info/` directories in `artifact-check` warnings now include a `run: pipetune package clean-local` recommendation.
+- Project version updated to `0.7.1`.
+- `pipetune version` codename updated to `Release Gate Cleanup and Profile DB Packaging Hardening`.
+
+### Fixed
+- After running `pipetune package clean-local`, `pipetune release check` now reliably returns `pass` instead of permanent `warn`.
+- `build-check` no longer leaves `*.egg-info/` behind after build inspection.
+
+### Safety
+- `clean-local` only removes repo-local development artifacts; never touches source files, docs, profile database files, test files, or user/system audio config.
+- No audio routing changed. No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration modified.
+
 ## [0.7.0] - 2026-06-06
 ### Added
 - Profile database directory structure: `profiles/headphones/`, `profiles/speakers/`, `profiles/microphones/`, `profiles/bluetooth/`, `profiles/templates/`.

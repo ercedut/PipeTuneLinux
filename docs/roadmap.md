@@ -102,7 +102,7 @@
 - Harden `package build-check` to clean up dist/ after inspection.
 - Do not add GUI, daemon behavior, routing, global LV2 install, COPR automation, Flatpak, or DSP features.
 
-## v0.7.0 - Device Profile Database and Contribution Workflow Foundation (Current)
+## v0.7.0 - Device Profile Database and Contribution Workflow Foundation (Done)
 - Community-maintainable profile database for headphones, laptop speakers, microphones, and Bluetooth.
 - Profile metadata schema with quality classes (A/B/C/D), safety statuses, source tracking, and license fields.
 - Profile validation command: `pipetune profiles validate-db`.
@@ -111,6 +111,24 @@
 - Integration with release check and CI pipeline.
 - No auto-apply, no global LV2 install, no audio routing, no system config mutation.
 - Guardrails for non-destructive integration.
+
+## v0.7.1 - Release Gate Cleanup and Profile DB Packaging Hardening (Current)
+- Add `pipetune package clean-local` and `--dry-run` to remove safe local development artifacts.
+- Improve artifact-check to distinguish removable artifacts from forbidden staged artifacts.
+- Harden profile DB packaging: build-check now verifies profile DB exists and is included in MANIFEST.in.
+- Release check recommends `clean-local` when only removable local artifacts are causing warn.
+- After `clean-local`, release check returns `pass`.
+
+## v0.8.0 - WirePlumber and Routing Diagnostics Foundation (Planned)
+- Read-only diagnostics for WirePlumber, PipeWire routing state, nodes, and default devices.
+- `pipetune wireplumber audit`, `pipetune route audit`, `pipetune route explain`.
+- No rule generation, no config writes, no service restarts.
+
+## v0.8.1 - WirePlumber Rule Preview and Bluetooth Policy Hardening (Planned)
+- Preview-only WirePlumber rule generation (not installed).
+- `pipetune bluetooth policy-audit` for Bluetooth profile diagnostics.
+- `pipetune wireplumber suggest-rule --dry-run --user-only` writes only to repo-local preview paths.
+- `pipetune wireplumber validate-preview` validates preview safety.
 
 ## v1.0 - Stable Profile Generation
 - Stable and validated profile generation pipeline for supported devices/stacks.
