@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.6.1] - 2026-06-06
+### Added
+- New `pipetune package artifact-check` command (and `--json`) to detect forbidden local and staged artifacts.
+- New `pipetune release check` command (and `--json`) to run all local release quality gates in one step.
+- New `pipetune/release.py` module with `run_release_check()`, `render_release_check_report()`, and `render_release_check_json()`.
+- GitHub Actions CI workflow at `.github/workflows/ci.yml` with five jobs: Python tests (3.11/3.12), packaging checks, CLI smoke check, artifact hygiene, and plugin validation.
+- New `scripts/fresh-checkout-smoke.sh` script for fresh-checkout install verification via `git archive`.
+- New `docs/ci.md` explaining CI jobs, safe checks, LV2 optional deps, and local reproduction steps.
+- Tests for artifact-check (clean tree, .so/.o detection, dist/build/egg-info detection, staged artifact detection), release check (pass/warn/fail, JSON, no system mutation), CI workflow existence, fresh checkout script existence, and build-check cleanup behavior.
+- `build`, `setuptools`, and `wheel` added to `dev` optional-dependencies in `pyproject.toml`.
+
+### Changed
+- Project version updated to `0.6.1`.
+- `pipetune version` codename updated to `Release Quality Gates and CI Foundation`.
+- `pipetune package build-check` now cleans up `dist/` artifacts after inspection (no leftover dist/ after each check).
+- `pipetune package build-check` now reports which archive names were verified before cleanup.
+- `render_package_report_json()` added to `pipetune/packaging.py` for JSON output of any `PackageReport`.
+- `ARCHIVE_FORBIDDEN_PATTERNS` narrowed: removed `*/reports/*` (was incorrectly matching `pipetune/reports/` Python module) and `*.egg-info/*` (standard sdist metadata).
+- `STAGED_FORBIDDEN_PATTERNS` defined as a named constant for testability.
+- `docs/release-checklist.md` updated with new release sequence using `pipetune release check` and `pipetune package artifact-check`.
+
+### Safety
+- Artifact-check is read-only: no deletion, no cleanup, no mutation.
+- Release check does not upload packages, tag automatically, push, or install system packages.
+- CI does not install LV2 plugins globally, route audio, or modify audio/system/user config.
+- No GUI, daemon, Flatpak, COPR automation, or DSP feature expansion was added.
+
 ## [0.6.0] - 2026-06-03
 ### Added
 - New `pipetune package inspect` command for package metadata and project layout inspection.

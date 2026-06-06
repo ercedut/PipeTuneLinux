@@ -2,8 +2,8 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
-## v0.6.0: Packaging and Installability Foundation
-v0.6.0 makes PipeTune Linux cleaner to install, verify, and prepare for release from a fresh checkout. It adds package inspection, build readiness checks, smoke tests, install docs, and a release checklist without adding GUI, daemon, routing, install, or DSP behavior.
+## v0.6.1: Release Quality Gates and CI Foundation
+v0.6.1 adds release quality gates, artifact hygiene checks, GitHub Actions CI, a fresh checkout smoke script, and the `pipetune release check` command. It also hardens `pipetune package build-check` to clean up build artifacts after inspection.
 
 ## Quick Start
 ```bash
@@ -17,24 +17,17 @@ pipetune doctor
 pipetune package inspect
 ```
 
-## What v0.6.0 Does
-- Keeps existing v0.1 through v0.3.1 commands working.
-- Installs generated profiles only into `~/.config/pipewire/pipewire.conf.d/`.
-- Requires `--user` and `--confirm-install` before writing user-level config.
-- Requires `--confirm-hardware-quirk` when preflight returns `requires_confirmation`.
-- Creates backups before overwriting existing user-level config files.
-- Records install manifests with checksums.
-- Provides rollback, list, activation-status, and dry-run commands.
-- Adds `state-doctor`, `verify-install`, dry-run repair proposals, and safe rolled-back manifest cleanup.
-- Adds `pipetune measure` commands for local measurement files and draft correction data.
-- Adds `inspect-wav` and `validate-response` for measurement trust checks.
-- Adds a local LV2 safeguard plugin bundle under `plugins/lv2/pipetune-safeguard.lv2/`.
-- Adds `pipetune plugin info`, `pipetune plugin build --local`, `pipetune plugin clean --local`, `pipetune plugin validate --offline`, `pipetune plugin validate --metadata`, and `pipetune plugin validate --rt-safety`.
-- Keeps local plugin build artifacts out of expected commit artifacts.
-- Adds `pipetune package inspect`, `pipetune package build-check`, and `pipetune package smoke-test`.
-- Adds explicit install and release checklist documentation.
+## What v0.6.1 Adds
+- `pipetune package artifact-check` — detects forbidden artifacts (compiled .so/.o, dist/, build/, egg-info) and staged forbidden files.
+- `pipetune release check` — runs all local release quality gates in one command with a pass/warn/fail verdict.
+- `pipetune release check --json` and `pipetune package artifact-check --json` — machine-readable JSON output.
+- GitHub Actions CI at `.github/workflows/ci.yml` (5 jobs: tests, packaging checks, CLI smoke, artifact hygiene, plugin validation).
+- `scripts/fresh-checkout-smoke.sh` — verifies install from a clean git archive without network.
+- `docs/ci.md` — CI documentation.
+- `pyproject.toml` dev extras now include `build`, `setuptools`, and `wheel`.
+- `pipetune package build-check` now cleans up dist/ artifacts after inspection.
 
-## What v0.6.0 Does Not Do
+## What v0.6.1 Does Not Do
 - Does not use sudo.
 - Does not write to `/etc`, `/lib`, `/sys`, `/proc`, or system audio configuration.
 - Does not restart PipeWire, WirePlumber, ALSA, or the system automatically.
@@ -164,15 +157,27 @@ The limiter is a hard safety limiter only. It exists to cap samples at a configu
 pipetune package inspect
 pipetune package build-check
 pipetune package smoke-test
+pipetune package artifact-check
+pipetune package artifact-check --json
 ```
 
-`package inspect` reports local package metadata and project layout. `package build-check` verifies packaging readiness without uploading anything; if the optional `build` module is missing, install it manually with:
+`package inspect` reports local package metadata and project layout. `package build-check` verifies packaging readiness, runs `python -m build`, inspects archives, and cleans up dist/ after verification. Install the `build` module if missing:
 
 ```bash
 python -m pip install build
 ```
 
-`package smoke-test` runs non-mutating CLI checks, including version, doctor, state-doctor, measurement fixture validation, plugin info, and plugin metadata validation.
+`package smoke-test` runs non-mutating CLI checks. `package artifact-check` detects compiled plugin artifacts, dist/build/egg-info directories, and forbidden staged files.
+
+## Release Quality Gates
+```bash
+pipetune release check
+pipetune release check --json
+```
+
+`release check` runs all local gates in one command: version metadata, required files, package inspect/build-check/smoke-test/artifact-check, and plugin metadata/RT-safety validation. Output is a checklist with a pass/warn/fail verdict. Run this before tagging any release.
+
+See [docs/release-checklist.md](docs/release-checklist.md) for the full release sequence.
 
 ## Privacy and Safety
 - Recording requires explicit `--confirm-recording`.
@@ -182,8 +187,8 @@ python -m pip install build
 - Mixer and hardware audit output can reveal device details; review output before sharing publicly.
 
 ## Roadmap
-- Current: v0.6.0 Packaging and Installability Foundation.
-- Next: v0.6.x packaging hardening or v0.7 routing diagnostics.
+- Current: v0.6.1 Release Quality Gates and CI Foundation.
+- Next: v0.7.0 Device Profile Database and Contribution Workflow Foundation.
 
 See [docs/roadmap.md](docs/roadmap.md).
 

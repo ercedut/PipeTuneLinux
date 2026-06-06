@@ -1,4 +1,4 @@
 """PipeTune Linux package metadata."""
 
-__version__ = "0.6.0"
-CODENAME = "Packaging and Installability Foundation"
+__version__ = "0.6.1"
+CODENAME = "Release Quality Gates and CI Foundation"

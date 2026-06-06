@@ -5,6 +5,7 @@ from __future__ import annotations
 import fnmatch
 import importlib.metadata
 import importlib.util
+import json
 import subprocess
 import sys
 import tarfile
@@ -231,6 +232,123 @@ def run_package_smoke_test_with_runner(runner) -> PackageReport:
     return PackageReport(passed=not errors, checks=checks, warnings=warnings, errors=errors)
 
 
+STAGED_FORBIDDEN_PATTERNS = (
+    ("*.so", "compiled shared object"),
+    ("*.o", "compiled object file"),
+    ("*.d", "dependency file"),
+    ("dist/*", "distribution artifact"),
+    ("build/*", "build artifact"),
+    ("*.egg-info/*", "egg-info artifact"),
+    ("*.egg-info", "egg-info directory"),
+)
+
+
+def run_package_artifact_check() -> PackageReport:
+    checks: list[str] = []
+    warnings: list[str] = []
+    errors: list[str] = []
+
+    compiled = _compiled_plugin_artifacts()
+    if compiled:
+        errors.append(
+            "compiled plugin artifacts present (must not be staged or committed): "
+            + ", ".join(str(p.relative_to(REPO_ROOT)) for p in compiled)
+        )
+    else:
+        checks.append("no compiled plugin artifacts (.so, .o) in plugin tree")
+
+    for dir_name in ("dist", "build"):
+        artifact_path = REPO_ROOT / dir_name
+        if artifact_path.is_dir():
+            warnings.append(f"{dir_name}/ found; gitignored but should be removed before tagging")
+        else:
+            checks.append(f"no {dir_name}/ directory")
+
+    egg_info_dirs = sorted(REPO_ROOT.glob("*.egg-info"))
+    if egg_info_dirs:
+        warnings.append(
+            "*.egg-info/ directories found: "
+            + ", ".join(p.name for p in egg_info_dirs)
+            + " (gitignored development artifact)"
+        )
+    else:
+        checks.append("no *.egg-info/ directories")
+
+    pycache_dirs = [
+        p for p in REPO_ROOT.rglob("__pycache__")
+        if ".venv" not in str(p) and p.is_dir()
+    ]
+    if pycache_dirs:
+        warnings.append(f"__pycache__/ directories found ({len(pycache_dirs)} outside .venv); gitignored")
+    else:
+        checks.append("no __pycache__/ directories outside .venv")
+
+    if (REPO_ROOT / ".pytest_cache").is_dir():
+        warnings.append(".pytest_cache/ directory found; gitignored but present")
+    else:
+        checks.append("no .pytest_cache/ directory")
+
+    _check_local_output_artifacts(checks, warnings)
+
+    staged_errors = _check_staged_artifacts()
+    if staged_errors:
+        errors.extend(staged_errors)
+    else:
+        checks.append("no forbidden artifacts staged in git index")
+
+    return PackageReport(passed=not errors, checks=checks, warnings=warnings, errors=errors)
+
+
+def _check_local_output_artifacts(checks: list[str], warnings: list[str]) -> None:
+    for dir_name, description in (("reports", "diagnostic report outputs"), ("generated", "generated PipeWire configs")):
+        path = REPO_ROOT / dir_name
+        if path.is_dir():
+            non_placeholder = [f for f in path.iterdir() if f.name != ".gitkeep"]
+            if non_placeholder:
+                warnings.append(
+                    f"{dir_name}/ contains local {description}: "
+                    + ", ".join(f.name for f in sorted(non_placeholder))
+                )
+            else:
+                checks.append(f"{dir_name}/ is clean (placeholder only)")
+
+    mic_dir = REPO_ROOT / "verification" / "microphone"
+    if mic_dir.is_dir():
+        recordings = sorted(mic_dir.glob("*.wav")) + sorted(mic_dir.glob("*.json"))
+        if recordings:
+            warnings.append(
+                "verification/microphone/ contains local recordings/results: "
+                + ", ".join(f.name for f in recordings)
+            )
+        else:
+            checks.append("verification/microphone/ has no local recordings or result files")
+
+
+def _check_staged_artifacts() -> list[str]:
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            cwd=REPO_ROOT,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=15,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if result.returncode != 0:
+        return []
+    staged_files = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    errors: list[str] = []
+    for staged_file in staged_files:
+        for pattern, description in STAGED_FORBIDDEN_PATTERNS:
+            if fnmatch.fnmatch(staged_file, pattern):
+                errors.append(f"forbidden staged artifact ({description}): {staged_file}")
+                break
+    return errors
+
+
 def render_package_report(title: str, report: PackageReport) -> str:
     lines = [title, "", "Checks:"]
     lines.extend(f"- pass: {check}" for check in report.checks) if report.checks else lines.append("- none")
@@ -242,6 +360,20 @@ def render_package_report(title: str, report: PackageReport) -> str:
         lines.extend(f"- fail: {error}" for error in report.errors)
     lines.extend(["", f"Final verdict: {report.verdict}", *PACKAGE_SAFETY_DISCLAIMER])
     return "\n".join(lines)
+
+
+def render_package_report_json(title: str, report: PackageReport) -> str:
+    return json.dumps(
+        {
+            "command": title,
+            "verdict": report.verdict,
+            "passed": report.passed,
+            "checks": report.checks,
+            "warnings": report.warnings,
+            "errors": report.errors,
+        },
+        indent=2,
+    )
 
 
 def _read_pyproject(errors: list[str]) -> dict:
@@ -342,6 +474,22 @@ def _attempt_local_build() -> tuple[list[str], list[str], list[str]]:
             errors.append(f"forbidden artifacts found in {archive}: " + ", ".join(forbidden))
         else:
             checks.append(f"archive excludes forbidden artifacts: {archive.name}")
+
+    archive_names = [a.name for a in archives]
+    checks.append("dist artifacts verified: " + ", ".join(archive_names))
+
+    for archive in archives:
+        try:
+            archive.unlink()
+        except OSError:
+            pass
+    if dist_dir.is_dir() and not any(dist_dir.iterdir()):
+        try:
+            dist_dir.rmdir()
+        except OSError:
+            pass
+    checks.append("build artifacts cleaned up after inspection")
+
     return checks, warnings, errors
 
 

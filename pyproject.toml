@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pipetune-linux"
-version = "0.6.0"
-description = "PipeTune Linux diagnostics, safe profile generation, activation safety, measurement tooling, local LV2 safeguard validation, and packaging checks"
+version = "0.6.1"
+description = "PipeTune Linux diagnostics, safe profile generation, activation safety, measurement tooling, local LV2 safeguard validation, packaging checks, and release quality gates"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
@@ -29,7 +29,7 @@ dependencies = []
 pipetune = "pipetune.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "build", "setuptools", "wheel"]
 
 [tool.setuptools.packages.find]
 include = ["pipetune*"]

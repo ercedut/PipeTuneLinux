@@ -33,9 +33,16 @@ from pipetune.measurement.sweep import generate_log_sweep, metadata_path_for_wav
 from pipetune.measurement.wav import inspect_wav, render_wav_diagnostics
 from pipetune.packaging import (
     render_package_report,
+    render_package_report_json,
+    run_package_artifact_check,
     run_package_build_check,
     run_package_inspect,
     run_package_smoke_test,
+)
+from pipetune.release import (
+    render_release_check_json,
+    render_release_check_report,
+    run_release_check,
 )
 from pipetune.plugin.safeguard import (
     clean_plugin_local,
@@ -279,6 +286,17 @@ def _build_parser() -> argparse.ArgumentParser:
     package_subparsers.add_parser("inspect", help="Inspect local packaging metadata and project layout.")
     package_subparsers.add_parser("build-check", help="Check local package build readiness without publishing.")
     package_subparsers.add_parser("smoke-test", help="Run local non-mutating CLI smoke checks.")
+    artifact_check_parser = package_subparsers.add_parser(
+        "artifact-check", help="Check repo for forbidden artifacts that must not be staged or committed."
+    )
+    artifact_check_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    release_parser = subparsers.add_parser("release", help="Release quality gate checks.")
+    release_subparsers = release_parser.add_subparsers(dest="release_command")
+    release_check_parser = release_subparsers.add_parser(
+        "check", help="Run all local release quality gates without publishing or uploading."
+    )
+    release_check_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
 
     return parser
 
@@ -819,6 +837,24 @@ def _cmd_package_smoke_test() -> int:
     return 0 if report.passed else 1
 
 
+def _cmd_package_artifact_check(json_output: bool) -> int:
+    report = run_package_artifact_check()
+    if json_output:
+        print(render_package_report_json("artifact-check", report))
+    else:
+        print(render_package_report("PipeTune Package Artifact Check", report))
+    return 0 if report.passed else 1
+
+
+def _cmd_release_check(json_output: bool) -> int:
+    report = run_release_check()
+    if json_output:
+        print(render_release_check_json(report))
+    else:
+        print(render_release_check_report(report))
+    return 0 if report.passed else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -962,6 +998,13 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_package_build_check()
         if args.package_command == "smoke-test":
             return _cmd_package_smoke_test()
+        if args.package_command == "artifact-check":
+            return _cmd_package_artifact_check(args.json)
+        parser.print_help()
+        return 1
+    if args.command == "release":
+        if args.release_command == "check":
+            return _cmd_release_check(args.json)
         parser.print_help()
         return 1
 
