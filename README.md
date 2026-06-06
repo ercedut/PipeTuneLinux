@@ -2,6 +2,9 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
+## v0.8.0: WirePlumber and Routing Diagnostics Foundation
+v0.8.0 adds read-only WirePlumber, PipeWire routing, and Bluetooth diagnostics. All commands observe and report only — no routing is changed, no services are restarted, no config is written.
+
 ## v0.7.1: Release Gate Cleanup and Profile DB Packaging Hardening
 v0.7.1 adds `pipetune package clean-local` to remove safe local development artifacts, improves artifact-check to clearly distinguish removable vs. forbidden artifacts, and hardens profile DB packaging verification. After running `clean-local`, `release check` reliably returns `pass`.
 
@@ -190,6 +193,18 @@ See [docs/release-checklist.md](docs/release-checklist.md) for the full release 
 - User-level install state is stored under `~/.local/share/pipetune/`.
 - PipeTune does not upload recordings, manifests, or hardware audits.
 - Mixer and hardware audit output can reveal device details; review output before sharing publicly.
+
+## WirePlumber and Routing Diagnostics
+```bash
+pipetune wireplumber audit
+pipetune wireplumber audit --json
+pipetune route audit
+pipetune route audit --json
+pipetune route explain
+pipetune route explain --json
+```
+
+All commands are read-only. See [docs/wireplumber-routing-diagnostics.md](docs/wireplumber-routing-diagnostics.md).
 
 ## Device Profile Database
 ```bash

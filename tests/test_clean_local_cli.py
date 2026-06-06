@@ -20,11 +20,11 @@ from pipetune import release as rel
 
 
 def test_version_is_071() -> None:
-    assert pipetune.__version__ == "0.7.1"
+    assert pipetune.__version__ == "0.8.0"
 
 
-def test_version_codename_is_cleanup() -> None:
-    assert "Cleanup" in pipetune.CODENAME or "cleanup" in pipetune.CODENAME.lower()
+def test_version_codename_is_wireplumber_or_routing() -> None:
+    assert "WirePlumber" in pipetune.CODENAME or "Routing" in pipetune.CODENAME
 
 
 # ---------------------------------------------------------------------------
@@ -545,7 +545,7 @@ def _write_minimal_repo_v071(root: Path) -> None:
             'build-backend = "setuptools.build_meta"',
             "[project]",
             'name = "pipetune-linux"',
-            'version = "0.7.1"',
+            'version = "0.8.0"',
             'description = "test"',
             'readme = "README.md"',
             'requires-python = ">=3.11"',

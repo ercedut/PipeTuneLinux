@@ -1,4 +1,4 @@
 """PipeTune Linux package metadata."""
 
-__version__ = "0.7.1"
-CODENAME = "Release Gate Cleanup and Profile DB Packaging Hardening"
+__version__ = "0.8.0"
+CODENAME = "WirePlumber and Routing Diagnostics Foundation"

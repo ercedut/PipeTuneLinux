@@ -343,7 +343,7 @@ def _write_minimal_repo(root: Path) -> None:
             'build-backend = "setuptools.build_meta"',
             "[project]",
             'name = "pipetune-linux"',
-            'version = "0.7.1"',
+            'version = "0.8.0"',
             'description = "test"',
             'readme = "README.md"',
             'requires-python = ">=3.11"',

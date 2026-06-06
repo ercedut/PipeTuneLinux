@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.8.0] - 2026-06-06
+### Added
+- New `pipetune wireplumber audit` command: checks WirePlumber/PipeWire/pipewire-pulse service status, default sink/source, device counts, and Bluetooth profile.
+- New `pipetune wireplumber audit --json` with stable JSON schema including `safety` block.
+- New `pipetune route audit` command: analyzes default routes, virtual filter-chain sinks, PipeTune config detection, and Bluetooth HFP/HSP warnings.
+- New `pipetune route audit --json` with stable JSON schema.
+- New `pipetune route explain` command: plain-English explanation of PipeWire routing (signal path, default sink/source, WirePlumber policy, Bluetooth profiles, filter-chains).
+- New `pipetune route explain --json`.
+- New `pipetune/wireplumber/` module: `models.py`, `collect.py`, `diagnose.py`, `render.py`.
+- Test fixtures: `tests/fixtures/wireplumber/` (7 fixture files for offline testing).
+- New `docs/wireplumber-routing-diagnostics.md`.
+- Tests for all new commands: fixture parsing, JSON schema, CLI integration, no-mutation safety flags, CI without live PipeWire/WirePlumber.
+
+### Changed
+- Project version updated to `0.8.0`.
+- `pipetune version` codename updated to `WirePlumber and Routing Diagnostics Foundation`.
+
+### Safety
+- All new commands are read-only: no routing changed, no services restarted, no config modified.
+- Bluetooth profile detection is informational only — no profile switching.
+- All JSON outputs include `safety` block with `read_only: true`, `modified_system: false`, `restarted_services: false`, `changed_routing: false`.
+- WirePlumber rule generation and install are deferred to v0.8.1.
+
 ## [0.7.1] - 2026-06-06
 ### Added
 - New `pipetune package clean-local` command: removes safe local development artifacts (`__pycache__/`, `.pytest_cache/`, `*.egg-info/`, `dist/`, `build/`, compiled plugin `.so`/`.o`).

@@ -41,6 +41,19 @@ from pipetune.packaging import (
     run_package_inspect,
     run_package_smoke_test,
 )
+from pipetune.wireplumber.diagnose import (
+    build_route_explain_text,
+    run_route_audit,
+    run_wireplumber_audit,
+)
+from pipetune.wireplumber.render import (
+    render_route_audit,
+    render_route_audit_json,
+    render_route_explain,
+    render_route_explain_json,
+    render_wireplumber_audit,
+    render_wireplumber_audit_json,
+)
 from pipetune.profiles.database import (
     list_profiles,
     render_profile_detail,
@@ -316,6 +329,18 @@ def _build_parser() -> argparse.ArgumentParser:
         "check", help="Run all local release quality gates without publishing or uploading."
     )
     release_check_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    wireplumber_parser = subparsers.add_parser("wireplumber", help="WirePlumber and PipeWire diagnostics.")
+    wireplumber_subparsers = wireplumber_parser.add_subparsers(dest="wireplumber_command")
+    wp_audit_parser = wireplumber_subparsers.add_parser("audit", help="Audit WirePlumber and PipeWire service and device state.")
+    wp_audit_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    route_parser = subparsers.add_parser("route", help="PipeWire routing diagnostics.")
+    route_subparsers = route_parser.add_subparsers(dest="route_command")
+    route_audit_parser = route_subparsers.add_parser("audit", help="Audit default routes, sinks, and sources.")
+    route_audit_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+    route_explain_parser = route_subparsers.add_parser("explain", help="Explain PipeWire routing in plain English.")
+    route_explain_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
 
     profiles_parser = subparsers.add_parser("profiles", help="Device profile database commands.")
     profiles_subparsers = profiles_parser.add_subparsers(dest="profiles_command")
@@ -898,6 +923,33 @@ def _cmd_release_check(json_output: bool) -> int:
     return 0 if report.passed else 1
 
 
+def _cmd_wireplumber_audit(json_output: bool) -> int:
+    report = run_wireplumber_audit()
+    if json_output:
+        print(render_wireplumber_audit_json(report))
+    else:
+        print(render_wireplumber_audit(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_route_audit(json_output: bool) -> int:
+    report = run_route_audit()
+    if json_output:
+        print(render_route_audit_json(report))
+    else:
+        print(render_route_audit(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_route_explain(json_output: bool) -> int:
+    lines = build_route_explain_text()
+    if json_output:
+        print(render_route_explain_json(lines))
+    else:
+        print(render_route_explain(lines))
+    return 0
+
+
 def _cmd_profiles_validate_db(json_output: bool) -> int:
     report = run_profile_db_validation()
     if json_output:
@@ -1080,6 +1132,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "release":
         if args.release_command == "check":
             return _cmd_release_check(args.json)
+        parser.print_help()
+        return 1
+    if args.command == "wireplumber":
+        if args.wireplumber_command == "audit":
+            return _cmd_wireplumber_audit(args.json)
+        parser.print_help()
+        return 1
+    if args.command == "route":
+        if args.route_command == "audit":
+            return _cmd_route_audit(args.json)
+        if args.route_command == "explain":
+            return _cmd_route_explain(args.json)
         parser.print_help()
         return 1
     if args.command == "profiles":
