@@ -102,13 +102,13 @@
 - Harden `package build-check` to clean up dist/ after inspection.
 - Do not add GUI, daemon behavior, routing, global LV2 install, COPR automation, Flatpak, or DSP features.
 
-## v0.7.0 - Device Profile Database and Contribution Workflow Foundation (Next)
+## v0.7.0 - Device Profile Database and Contribution Workflow Foundation (Current)
 - Community-maintainable profile database for headphones, laptop speakers, microphones, and Bluetooth.
-- Profile metadata schema with quality classes, safety status, source tracking, and license fields.
+- Profile metadata schema with quality classes (A/B/C/D), safety statuses, source tracking, and license fields.
 - Profile validation command: `pipetune profiles validate-db`.
 - Profile listing, search, and inspection commands: `pipetune profiles list/show/search`.
 - Contribution templates and profile review documentation.
-- Integration with release check and CI.
+- Integration with release check and CI pipeline.
 - No auto-apply, no global LV2 install, no audio routing, no system config mutation.
 - Guardrails for non-destructive integration.
 

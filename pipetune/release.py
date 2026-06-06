@@ -16,6 +16,7 @@ from pipetune.packaging import (
     run_package_smoke_test,
 )
 from pipetune.plugin.safeguard import run_metadata_validation, run_rt_safety_validation
+from pipetune.profiles.validator import ProfileDbReport, run_profile_db_validation
 
 REQUIRED_FILES = (
     "README.md",
@@ -76,7 +77,23 @@ def run_release_check() -> ReleaseCheckReport:
     else:
         errors.append("plugin RT-safety validation: fail — " + "; ".join(rt_report.errors))
 
+    _merge_profile_db_report(run_profile_db_validation(), checks, warnings, errors)
+
     return ReleaseCheckReport(passed=not errors, checks=checks, warnings=warnings, errors=errors)
+
+
+def _merge_profile_db_report(
+    report: ProfileDbReport,
+    checks: list[str],
+    warnings: list[str],
+    errors: list[str],
+) -> None:
+    if report.verdict == "pass":
+        checks.append("profile database validation: pass")
+    elif report.verdict == "warn":
+        warnings.append("profile database validation: warn — " + "; ".join(report.warnings))
+    else:
+        errors.append("profile database validation: fail — " + "; ".join(report.errors))
 
 
 def _merge_sub_report(

@@ -1,4 +1,4 @@
 """PipeTune Linux package metadata."""
 
-__version__ = "0.6.1"
-CODENAME = "Release Quality Gates and CI Foundation"
+__version__ = "0.7.0"
+CODENAME = "Device Profile Database and Contribution Workflow Foundation"

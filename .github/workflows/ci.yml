@@ -41,6 +41,8 @@ jobs:
         run: pipetune package build-check
       - name: Package smoke-test
         run: pipetune package smoke-test
+      - name: Profile database validation
+        run: pipetune profiles validate-db
       - name: Release check
         run: pipetune release check
 

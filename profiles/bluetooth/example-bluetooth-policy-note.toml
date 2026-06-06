@@ -1,0 +1,19 @@
+# EXAMPLE PROFILE — policy note only. Not an audio correction profile.
+# This profile demonstrates the bluetooth-device metadata schema.
+
+[metadata]
+profile_id = "bluetooth-example-policy-note"
+profile_name = "Bluetooth Audio Device Policy Note (Example)"
+profile_type = "bluetooth-device"
+version = "0.1.0"
+device_vendor = "generic"
+device_model = "bluetooth-headset"
+device_category = "bluetooth"
+source_type = "policy-note"
+source_reference = "bluetooth device policy note example — codec negotiation affects EQ applicability"
+license = "MIT"
+quality_class = "D"
+safety_status = "draft"
+created_at = "2026-06-06"
+maintainer = "example"
+notes = "EXAMPLE ONLY — policy note for Bluetooth audio devices. Codec negotiation (SBC/AAC/aptX/LDAC) affects EQ applicability. Not an audio correction profile."

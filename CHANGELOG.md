@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.7.0] - 2026-06-06
+### Added
+- Profile database directory structure: `profiles/headphones/`, `profiles/speakers/`, `profiles/microphones/`, `profiles/bluetooth/`, `profiles/templates/`.
+- Four example profiles clearly marked as drafts: Sennheiser HD 650 (headphone, quality B), generic laptop speaker (quality C, with safeguards), built-in mic speech clarity (quality C), Bluetooth policy note (quality D).
+- New `pipetune/profiles/` Python module: `schema.py`, `loader.py`, `validator.py`, `database.py`.
+- Profile metadata schema with required fields, quality classes (A/B/C/D), and safety statuses (safe/draft/experimental/rejected).
+- New `pipetune profiles validate-db` command (and `--json`) to validate all profiles in the database.
+- New `pipetune profiles list` command with `--type` and `--quality` filters.
+- New `pipetune profiles show <profile_id>` command for detailed profile inspection.
+- New `pipetune profiles search <query>` command for keyword search.
+- Contribution templates: `profiles/templates/profile-request.md` and `profiles/templates/profile-submission.md`.
+- New `docs/profile-database.md` explaining quality classes, safety statuses, HPF requirements, and licensing.
+- New `docs/profile-contribution-guide.md` with submission instructions, metadata requirements, and review process.
+- Tests for profile database structure, metadata validation, duplicate ID detection, unknown quality class/status rejection, missing source/license rejection, laptop-speaker HPF/limiter requirements, measurement-correction draft requirement, profile list/show/search, CLI integration, CI workflow validation, and docs existence checks.
+- `pipetune release check` now includes `pipetune profiles validate-db` as a release gate.
+- CI workflow updated to run `pipetune profiles validate-db` in the packaging-check job.
+
+### Changed
+- Project version updated to `0.7.0`.
+- `pipetune version` codename updated to `Device Profile Database and Contribution Workflow Foundation`.
+- `pyproject.toml` version and description updated.
+
+### Safety
+- Profile commands are read-only: no profile is installed, applied, or auto-routed.
+- No global LV2 installation is performed.
+- No audio routing is changed.
+- No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration is modified.
+- Rejected profiles are blocked from export/apply by safety_status enforcement.
+- Unsourced and unlicensed profiles are rejected by validation.
+- Laptop-speaker profiles without HPF and limiter safeguards are rejected.
+- No GUI, daemon, Flatpak, COPR automation, or new DSP features were added.
+
 ## [0.6.1] - 2026-06-06
 ### Added
 - New `pipetune package artifact-check` command (and `--json`) to detect forbidden local and staged artifacts.

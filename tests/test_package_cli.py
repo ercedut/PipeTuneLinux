@@ -16,7 +16,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pipetune-linux"
-version = "0.6.1"
+version = "0.7.0"
 description = "test"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -59,7 +59,7 @@ def test_package_inspect_cli_reports_project_metadata(capsys) -> None:
     assert exit_code == 0
     assert "PipeTune Package Inspect" in output
     assert "package name: pipetune-linux" in output
-    assert "project version: 0.6.1" in output
+    assert "project version: 0.7.0" in output
     assert "CLI entry point configured: yes" in output
     assert "plugin source bundle present: yes" in output
     assert "No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration was modified." in output

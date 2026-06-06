@@ -26,6 +26,7 @@ git status --short
 python -m pytest -q
 pipetune release check
 pipetune package artifact-check
+pipetune profiles validate-db
 pipetune plugin build --local
 pipetune plugin clean --local
 git diff --check

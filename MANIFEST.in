@@ -7,6 +7,8 @@ include plugins/lv2/pipetune-safeguard.lv2/pipetune-safeguard.ttl
 include plugins/lv2/pipetune-safeguard.lv2/pipetune_safeguard.c
 include plugins/lv2/pipetune-safeguard.lv2/Makefile
 recursive-include docs *.md
+recursive-include profiles *.toml
+recursive-include profiles *.md
 recursive-include examples *.txt
 recursive-include tests *.py
 recursive-include tests/fixtures *.csv

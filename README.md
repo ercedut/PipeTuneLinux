@@ -2,8 +2,8 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
-## v0.6.1: Release Quality Gates and CI Foundation
-v0.6.1 adds release quality gates, artifact hygiene checks, GitHub Actions CI, a fresh checkout smoke script, and the `pipetune release check` command. It also hardens `pipetune package build-check` to clean up build artifacts after inspection.
+## v0.7.0: Device Profile Database and Contribution Workflow Foundation
+v0.7.0 adds a community-maintainable device profile database with metadata schema, quality classes, safety validation, and read-only listing/search commands. Profile commands are read-only — no profile is installed or auto-applied.
 
 ## Quick Start
 ```bash
@@ -123,7 +123,7 @@ pipetune measure compare-response \
 
 pipetune measure generate-correction \
   --input measurements/imported/rew-normalized.csv \
-  --output profiles/speakers/laptop-correction-draft.toml \
+  --output measurements/corrections/laptop-correction-draft.toml \
   --target flat \
   --safe
 ```
@@ -186,9 +186,22 @@ See [docs/release-checklist.md](docs/release-checklist.md) for the full release 
 - PipeTune does not upload recordings, manifests, or hardware audits.
 - Mixer and hardware audit output can reveal device details; review output before sharing publicly.
 
+## Device Profile Database
+```bash
+pipetune profiles list
+pipetune profiles list --type headphone
+pipetune profiles list --quality B
+pipetune profiles show <profile_id>
+pipetune profiles search laptop
+pipetune profiles validate-db
+pipetune profiles validate-db --json
+```
+
+Profile commands are read-only. No profile is installed, applied, or routed automatically. See [docs/profile-database.md](docs/profile-database.md) and [docs/profile-contribution-guide.md](docs/profile-contribution-guide.md).
+
 ## Roadmap
-- Current: v0.6.1 Release Quality Gates and CI Foundation.
-- Next: v0.7.0 Device Profile Database and Contribution Workflow Foundation.
+- Current: v0.7.0 Device Profile Database and Contribution Workflow Foundation.
+- Next: v0.7.x profile database expansion or v0.8 routing diagnostics.
 
 See [docs/roadmap.md](docs/roadmap.md).
 

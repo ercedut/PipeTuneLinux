@@ -1,0 +1,19 @@
+# EXAMPLE PROFILE — not a verified measurement. Do not use for audio configuration.
+# This profile demonstrates the headphone metadata schema only.
+
+[metadata]
+profile_id = "headphone-example-autoeq-sennheiser-hd650"
+profile_name = "Sennheiser HD 650 (AutoEQ Example)"
+profile_type = "headphone"
+version = "0.1.0"
+device_vendor = "Sennheiser"
+device_model = "HD 650"
+device_category = "over-ear"
+source_type = "autoeq-database"
+source_url = "https://github.com/jaakkopasanen/AutoEq"
+license = "MIT"
+quality_class = "B"
+safety_status = "draft"
+created_at = "2026-06-06"
+maintainer = "example"
+notes = "EXAMPLE ONLY — derived from AutoEQ database schema. Not a verified measurement. Do not apply."
