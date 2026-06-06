@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.8.1] - 2026-06-06
+### Added
+- New `pipetune bluetooth policy-audit` command: detects Bluetooth audio devices, identifies active profile (A2DP vs HSP/HFP), reports codec hints, and warns when HSP/HFP is active during music use.
+- New `pipetune bluetooth policy-audit --json` with stable JSON schema including `safety` block with `changed_bluetooth_profile: false`.
+- New `pipetune wireplumber suggest-rule --user-only --dry-run` command: generates a PREVIEW ONLY WirePlumber rule skeleton. Both `--dry-run` and `--user-only` are required; refused without both.
+- New `pipetune wireplumber suggest-rule --output <path>` option: output path must be repo-local under `previews/wireplumber/` or `reports/wireplumber/`; all system paths refused.
+- New `pipetune wireplumber validate-preview <path>` command: validates a preview file for required safety markers (`PREVIEW ONLY`, `NOT INSTALLED`) and dangerous Lua patterns.
+- New `pipetune route recommend` command: inspects routing state and suggests improvements; read-only, never applies changes.
+- New `pipetune route recommend --json`.
+- New `pipetune/wireplumber/bluetooth.py`, `preview.py`, `recommend.py` modules.
+- `previews/wireplumber/` directory (gitkeep) for storing rule previews.
+- New `docs/bluetooth-policy-diagnostics.md`.
+- New `docs/wireplumber-rule-preview.md`.
+- Tests for all new commands (50 new tests).
+
+### Changed
+- Project version updated to `0.8.1`.
+- `pipetune version` codename updated to `WirePlumber Rule Preview and Bluetooth Policy Hardening`.
+
+### Safety
+- `suggest-rule` refuses paths under `~/.config/wireplumber/`, `/etc/`, `/lib/`, `/usr/`, `/sys/`, or outside the repository.
+- `validate-preview` is fully read-only; never modifies files.
+- No WirePlumber rule is installed. No routing is changed. No Bluetooth profile is switched.
+- All JSON outputs include `safety` block confirming `read_only: true`, `modified_system: false`, `restarted_services: false`, `changed_routing: false`.
+
 ## [0.8.0] - 2026-06-06
 ### Added
 - New `pipetune wireplumber audit` command: checks WirePlumber/PipeWire/pipewire-pulse service status, default sink/source, device counts, and Bluetooth profile.

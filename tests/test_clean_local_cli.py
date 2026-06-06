@@ -20,7 +20,7 @@ from pipetune import release as rel
 
 
 def test_version_is_071() -> None:
-    assert pipetune.__version__ == "0.8.0"
+    assert pipetune.__version__ == "0.8.1"
 
 
 def test_version_codename_is_wireplumber_or_routing() -> None:

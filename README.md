@@ -2,6 +2,9 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
+## v0.8.1: WirePlumber Rule Preview and Bluetooth Policy Hardening
+v0.8.1 adds `pipetune bluetooth policy-audit` for Bluetooth profile diagnostics, `pipetune wireplumber suggest-rule --user-only --dry-run` to generate a PREVIEW ONLY rule skeleton (never installed), `pipetune wireplumber validate-preview` to validate preview safety, and `pipetune route recommend` for routing improvement suggestions. All commands are read-only. Rule previews are written only to repo-local `previews/wireplumber/` paths. See [docs/bluetooth-policy-diagnostics.md](docs/bluetooth-policy-diagnostics.md) and [docs/wireplumber-rule-preview.md](docs/wireplumber-rule-preview.md).
+
 ## v0.8.0: WirePlumber and Routing Diagnostics Foundation
 v0.8.0 adds read-only WirePlumber, PipeWire routing, and Bluetooth diagnostics. All commands observe and report only — no routing is changed, no services are restarted, no config is written.
 
@@ -202,9 +205,24 @@ pipetune route audit
 pipetune route audit --json
 pipetune route explain
 pipetune route explain --json
+pipetune route recommend
+pipetune route recommend --json
 ```
 
 All commands are read-only. See [docs/wireplumber-routing-diagnostics.md](docs/wireplumber-routing-diagnostics.md).
+
+## WirePlumber Rule Preview and Bluetooth Policy
+```bash
+pipetune bluetooth policy-audit
+pipetune bluetooth policy-audit --json
+pipetune wireplumber suggest-rule --user-only --dry-run
+pipetune wireplumber suggest-rule --user-only --dry-run --output previews/wireplumber/my-rule.lua
+pipetune wireplumber suggest-rule --user-only --dry-run --json
+pipetune wireplumber validate-preview previews/wireplumber/my-rule.lua
+pipetune wireplumber validate-preview previews/wireplumber/my-rule.lua --json
+```
+
+All commands are read-only. Rule previews are PREVIEW ONLY and never installed. See [docs/bluetooth-policy-diagnostics.md](docs/bluetooth-policy-diagnostics.md) and [docs/wireplumber-rule-preview.md](docs/wireplumber-rule-preview.md).
 
 ## Device Profile Database
 ```bash

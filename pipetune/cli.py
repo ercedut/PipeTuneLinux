@@ -41,10 +41,28 @@ from pipetune.packaging import (
     run_package_inspect,
     run_package_smoke_test,
 )
+from pipetune.wireplumber.bluetooth import (
+    render_bluetooth_policy_audit,
+    render_bluetooth_policy_audit_json,
+    run_bluetooth_policy_audit,
+)
 from pipetune.wireplumber.diagnose import (
     build_route_explain_text,
     run_route_audit,
     run_wireplumber_audit,
+)
+from pipetune.wireplumber.preview import (
+    render_suggest_rule_json,
+    render_suggest_rule_report,
+    render_validate_preview_json,
+    render_validate_preview_report,
+    run_suggest_rule,
+    run_validate_preview,
+)
+from pipetune.wireplumber.recommend import (
+    render_route_recommend,
+    render_route_recommend_json,
+    run_route_recommend,
 )
 from pipetune.wireplumber.render import (
     render_route_audit,
@@ -335,12 +353,33 @@ def _build_parser() -> argparse.ArgumentParser:
     wp_audit_parser = wireplumber_subparsers.add_parser("audit", help="Audit WirePlumber and PipeWire service and device state.")
     wp_audit_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
 
+    suggest_rule_parser = wireplumber_subparsers.add_parser(
+        "suggest-rule", help="Generate a WirePlumber rule preview (NOT installed; --dry-run --user-only required)."
+    )
+    suggest_rule_parser.add_argument("--dry-run", action="store_true", help="Required: generate preview only, do not install.")
+    suggest_rule_parser.add_argument("--user-only", action="store_true", help="Required: only suggest user-level rules.")
+    suggest_rule_parser.add_argument("--output", type=Path, help="Optional repo-local output path for the preview file.")
+    suggest_rule_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    validate_preview_parser = wireplumber_subparsers.add_parser(
+        "validate-preview", help="Validate a WirePlumber rule preview file."
+    )
+    validate_preview_parser.add_argument("path", type=Path, help="Path to the preview file to validate.")
+    validate_preview_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
     route_parser = subparsers.add_parser("route", help="PipeWire routing diagnostics.")
     route_subparsers = route_parser.add_subparsers(dest="route_command")
     route_audit_parser = route_subparsers.add_parser("audit", help="Audit default routes, sinks, and sources.")
     route_audit_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
     route_explain_parser = route_subparsers.add_parser("explain", help="Explain PipeWire routing in plain English.")
     route_explain_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+    route_recommend_parser = route_subparsers.add_parser("recommend", help="Give read-only routing recommendations.")
+    route_recommend_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    bluetooth_parser = subparsers.add_parser("bluetooth", help="Bluetooth audio policy diagnostics.")
+    bluetooth_subparsers = bluetooth_parser.add_subparsers(dest="bluetooth_command")
+    bt_audit_parser = bluetooth_subparsers.add_parser("policy-audit", help="Audit Bluetooth audio profile and codec.")
+    bt_audit_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
 
     profiles_parser = subparsers.add_parser("profiles", help="Device profile database commands.")
     profiles_subparsers = profiles_parser.add_subparsers(dest="profiles_command")
@@ -950,6 +989,47 @@ def _cmd_route_explain(json_output: bool) -> int:
     return 0
 
 
+def _cmd_bluetooth_policy_audit(json_output: bool) -> int:
+    report = run_bluetooth_policy_audit()
+    if json_output:
+        print(render_bluetooth_policy_audit_json(report))
+    else:
+        print(render_bluetooth_policy_audit(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_wireplumber_suggest_rule(
+    dry_run: bool,
+    user_only: bool,
+    output: Path | None,
+    json_output: bool,
+) -> int:
+    report = run_suggest_rule(dry_run=dry_run, user_only=user_only, output_path=output)
+    if json_output:
+        print(render_suggest_rule_json(report))
+    else:
+        print(render_suggest_rule_report(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_wireplumber_validate_preview(path: Path, json_output: bool) -> int:
+    report = run_validate_preview(path=path)
+    if json_output:
+        print(render_validate_preview_json(report))
+    else:
+        print(render_validate_preview_report(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_route_recommend(json_output: bool) -> int:
+    report = run_route_recommend()
+    if json_output:
+        print(render_route_recommend_json(report))
+    else:
+        print(render_route_recommend(report))
+    return 0
+
+
 def _cmd_profiles_validate_db(json_output: bool) -> int:
     report = run_profile_db_validation()
     if json_output:
@@ -1137,6 +1217,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "wireplumber":
         if args.wireplumber_command == "audit":
             return _cmd_wireplumber_audit(args.json)
+        if args.wireplumber_command == "suggest-rule":
+            return _cmd_wireplumber_suggest_rule(args.dry_run, args.user_only, args.output, args.json)
+        if args.wireplumber_command == "validate-preview":
+            return _cmd_wireplumber_validate_preview(args.path, args.json)
         parser.print_help()
         return 1
     if args.command == "route":
@@ -1144,6 +1228,13 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_route_audit(args.json)
         if args.route_command == "explain":
             return _cmd_route_explain(args.json)
+        if args.route_command == "recommend":
+            return _cmd_route_recommend(args.json)
+        parser.print_help()
+        return 1
+    if args.command == "bluetooth":
+        if args.bluetooth_command == "policy-audit":
+            return _cmd_bluetooth_policy_audit(args.json)
         parser.print_help()
         return 1
     if args.command == "profiles":

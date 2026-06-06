@@ -94,7 +94,7 @@
 - Verify source/wheel readiness without publishing packages.
 - Keep normal verification rootless and non-mutating.
 
-## v0.6.1 - Release Quality Gates and CI Foundation (Current)
+## v0.6.1 - Release Quality Gates and CI Foundation (Done)
 - Add `pipetune package artifact-check` for local and staged artifact hygiene detection.
 - Add `pipetune release check` as a single-command release gate with pass/warn/fail verdict.
 - Add GitHub Actions CI with five jobs: tests, packaging, CLI smoke, artifact hygiene, plugin validation.
@@ -112,23 +112,24 @@
 - No auto-apply, no global LV2 install, no audio routing, no system config mutation.
 - Guardrails for non-destructive integration.
 
-## v0.7.1 - Release Gate Cleanup and Profile DB Packaging Hardening (Current)
+## v0.7.1 - Release Gate Cleanup and Profile DB Packaging Hardening (Done)
 - Add `pipetune package clean-local` and `--dry-run` to remove safe local development artifacts.
 - Improve artifact-check to distinguish removable artifacts from forbidden staged artifacts.
 - Harden profile DB packaging: build-check now verifies profile DB exists and is included in MANIFEST.in.
 - Release check recommends `clean-local` when only removable local artifacts are causing warn.
 - After `clean-local`, release check returns `pass`.
 
-## v0.8.0 - WirePlumber and Routing Diagnostics Foundation (Planned)
+## v0.8.0 - WirePlumber and Routing Diagnostics Foundation (Done)
 - Read-only diagnostics for WirePlumber, PipeWire routing state, nodes, and default devices.
 - `pipetune wireplumber audit`, `pipetune route audit`, `pipetune route explain`.
 - No rule generation, no config writes, no service restarts.
 
-## v0.8.1 - WirePlumber Rule Preview and Bluetooth Policy Hardening (Planned)
+## v0.8.1 - WirePlumber Rule Preview and Bluetooth Policy Hardening (Current)
 - Preview-only WirePlumber rule generation (not installed).
 - `pipetune bluetooth policy-audit` for Bluetooth profile diagnostics.
 - `pipetune wireplumber suggest-rule --dry-run --user-only` writes only to repo-local preview paths.
 - `pipetune wireplumber validate-preview` validates preview safety.
+- `pipetune route recommend` provides routing improvement suggestions (read-only).
 
 ## v1.0 - Stable Profile Generation
 - Stable and validated profile generation pipeline for supported devices/stacks.
