@@ -4,14 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pipetune-linux"
-version = "0.5.1"
-description = "PipeTune Linux diagnostics, safe profile generation, activation safety, measurement tooling, and local LV2 safeguard plugin hardening CLI"
+version = "0.6.0"
+description = "PipeTune Linux diagnostics, safe profile generation, activation safety, measurement tooling, local LV2 safeguard validation, and packaging checks"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
   { name = "PipeTune Linux Maintainers" }
 ]
 license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
@@ -32,7 +33,13 @@ dev = ["pytest>=7"]
 
 [tool.setuptools.packages.find]
 include = ["pipetune*"]
-exclude = ["reports*", "docs*", "tests*"]
+exclude = ["reports*", "docs*", "tests*", "generated*", "verification*", "plugins*"]
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.exclude-package-data]
+"*" = ["*.so", "*.o", "*.d", "*.tmp", "*~"]
 
 [tool.pytest.ini_options]
 addopts = "-q"

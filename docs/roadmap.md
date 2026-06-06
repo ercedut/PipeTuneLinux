@@ -78,7 +78,7 @@
 - Keep plugin work non-mutating: no global install, no routing, no service restart.
 - Avoid enhancer, bass booster, spatializer, or mastering-suite scope.
 
-## v0.5.1 - LV2 Build, Metadata, and RT-Safety Hardening (Current)
+## v0.5.1 - LV2 Build, Metadata, and RT-Safety Hardening (Done)
 - Harden local LV2 build dependency checks and Fedora error guidance.
 - Add local build artifact cleanup and gitignore coverage for `.so`, `.o`, dependency, and temporary files.
 - Add metadata validation for TTL files, plugin URI consistency, port documentation, and control ranges.
@@ -87,7 +87,15 @@
 - Attempt compiled `.so` offline validation when a local build artifact is present.
 - Keep DSP scope unchanged and keep plugin work non-mutating.
 
-## v0.6 - WirePlumber Helper
+## v0.6.0 - Packaging and Installability Foundation (Current)
+- Harden Python packaging metadata and deliberate source distribution inclusion.
+- Add package inspect, build-check, and smoke-test commands.
+- Add install and release checklist documentation.
+- Verify source/wheel readiness without publishing packages.
+- Keep normal verification rootless and non-mutating.
+- Do not add GUI, daemon behavior, routing, global LV2 install, COPR automation, Flatpak, or DSP features.
+
+## v0.7 - WirePlumber Helper
 - Session policy helper tooling for profile routing and policy diagnostics.
 - Guardrails for non-destructive integration.
 

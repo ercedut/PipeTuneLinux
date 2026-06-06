@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.6.0] - 2026-06-03
+### Added
+- New `pipetune package inspect` command for package metadata and project layout inspection.
+- New `pipetune package build-check` command for local packaging readiness checks without publishing.
+- New `pipetune package smoke-test` command for non-mutating installed/module CLI smoke checks.
+- Explicit `MANIFEST.in` for source distribution inclusion and artifact exclusion.
+- New `docs/install.md` fresh-checkout installation guide.
+- New `docs/release-checklist.md` local release checklist.
+- Tests for package inspection, build-check warning behavior, forbidden artifact detection, archive exclusion checks, and package smoke checks.
+
+### Changed
+- Project version updated to `0.6.0`.
+- `pipetune version` codename updated to `Packaging and Installability Foundation`.
+- `pyproject.toml` now documents package data inclusion/exclusion intent more explicitly.
+- `.gitignore` now covers `dist/`, `build/`, and local measurement output patterns.
+- README now starts with a clean quick-start workflow.
+
+### Safety
+- Package commands do not upload packages.
+- Package commands do not install LV2 plugins globally.
+- Package commands do not route audio.
+- Package commands do not modify PipeWire, WirePlumber, ALSA, service, system config, or user audio config.
+- No GUI, daemon, Flatpak, COPR automation, or DSP feature expansion was added.
+
 ## [0.5.1] - 2026-06-03
 ### Added
 - New `pipetune plugin clean --local` command for local LV2 build artifact cleanup.

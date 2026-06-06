@@ -2,10 +2,22 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
-## v0.5.1: LV2 Build, Metadata, and RT-Safety Hardening
-v0.5.1 hardens the local-only LV2 safeguard plugin foundation. It improves build dependency checks, artifact cleanup, metadata validation, RT-safety validation, and offline validation reporting without adding DSP features.
+## v0.6.0: Packaging and Installability Foundation
+v0.6.0 makes PipeTune Linux cleaner to install, verify, and prepare for release from a fresh checkout. It adds package inspection, build readiness checks, smoke tests, install docs, and a release checklist without adding GUI, daemon, routing, install, or DSP behavior.
 
-## What v0.5.1 Does
+## Quick Start
+```bash
+git clone <repo-url>
+cd PipeTuneLinux
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+pipetune version
+pipetune doctor
+pipetune package inspect
+```
+
+## What v0.6.0 Does
 - Keeps existing v0.1 through v0.3.1 commands working.
 - Installs generated profiles only into `~/.config/pipewire/pipewire.conf.d/`.
 - Requires `--user` and `--confirm-install` before writing user-level config.
@@ -19,8 +31,10 @@ v0.5.1 hardens the local-only LV2 safeguard plugin foundation. It improves build
 - Adds a local LV2 safeguard plugin bundle under `plugins/lv2/pipetune-safeguard.lv2/`.
 - Adds `pipetune plugin info`, `pipetune plugin build --local`, `pipetune plugin clean --local`, `pipetune plugin validate --offline`, `pipetune plugin validate --metadata`, and `pipetune plugin validate --rt-safety`.
 - Keeps local plugin build artifacts out of expected commit artifacts.
+- Adds `pipetune package inspect`, `pipetune package build-check`, and `pipetune package smoke-test`.
+- Adds explicit install and release checklist documentation.
 
-## What v0.5.1 Does Not Do
+## What v0.6.0 Does Not Do
 - Does not use sudo.
 - Does not write to `/etc`, `/lib`, `/sys`, `/proc`, or system audio configuration.
 - Does not restart PipeWire, WirePlumber, ALSA, or the system automatically.
@@ -32,11 +46,16 @@ v0.5.1 hardens the local-only LV2 safeguard plugin foundation. It improves build
 - Does not install the LV2 plugin globally.
 - Does not auto-route audio through the LV2 plugin.
 - Does not build an audio enhancer, spatializer, mastering suite, or bass booster.
+- Does not publish packages.
+- Does not add Fedora COPR automation.
+- Does not add Flatpak packaging.
 
 ## Installation
 ```bash
 python -m pip install -e .
 ```
+
+See [docs/install.md](docs/install.md) for fresh-checkout installation, optional LV2 build dependencies, cleanup, and uninstall steps.
 
 ## Core Usage
 ```bash
@@ -140,6 +159,21 @@ PipeTune checks for missing `gcc`, `make`, and LV2 headers before local builds, 
 
 The limiter is a hard safety limiter only. It exists to cap samples at a configured ceiling; it is not a mastering limiter and should not be described as improving sound quality.
 
+## Package Verification
+```bash
+pipetune package inspect
+pipetune package build-check
+pipetune package smoke-test
+```
+
+`package inspect` reports local package metadata and project layout. `package build-check` verifies packaging readiness without uploading anything; if the optional `build` module is missing, install it manually with:
+
+```bash
+python -m pip install build
+```
+
+`package smoke-test` runs non-mutating CLI checks, including version, doctor, state-doctor, measurement fixture validation, plugin info, and plugin metadata validation.
+
 ## Privacy and Safety
 - Recording requires explicit `--confirm-recording`.
 - Generated repo-local configs and manifests are ignored by default.
@@ -148,8 +182,8 @@ The limiter is a hard safety limiter only. It exists to cap samples at a configu
 - Mixer and hardware audit output can reveal device details; review output before sharing publicly.
 
 ## Roadmap
-- Current: v0.5.1 LV2 Build, Metadata, and RT-Safety Hardening.
-- Next: v0.6 routing diagnostics.
+- Current: v0.6.0 Packaging and Installability Foundation.
+- Next: v0.6.x packaging hardening or v0.7 routing diagnostics.
 
 See [docs/roadmap.md](docs/roadmap.md).
 

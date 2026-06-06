@@ -4,6 +4,8 @@ __pycache__/
 *.egg-info/
 .venv/
 .pytest_cache/
+dist/
+build/
 .local-pipetune-test/
 pipetune-install-test/
 *.install-state.json
@@ -29,6 +31,9 @@ verification/microphone/*.txt
 
 # Local measurement files
 measurements/
+measurements/**/*.wav
+measurements/**/*.csv
+measurements/**/*.json
 profiles/**/*.toml
 
 # Local plugin build artifacts

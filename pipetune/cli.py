@@ -31,6 +31,12 @@ from pipetune.measurement.rew import import_rew_csv
 from pipetune.measurement.response import render_response_validation, validate_response_csv
 from pipetune.measurement.sweep import generate_log_sweep, metadata_path_for_wav
 from pipetune.measurement.wav import inspect_wav, render_wav_diagnostics
+from pipetune.packaging import (
+    render_package_report,
+    run_package_build_check,
+    run_package_inspect,
+    run_package_smoke_test,
+)
 from pipetune.plugin.safeguard import (
     clean_plugin_local,
     build_plugin_local,
@@ -267,6 +273,12 @@ def _build_parser() -> argparse.ArgumentParser:
     plugin_validate_parser.add_argument("--metadata", action="store_true", help="Validate LV2 TTL metadata.")
     plugin_validate_parser.add_argument("--rt-safety", action="store_true", help="Run static RT-safety checks on the LV2 source.")
     plugin_validate_parser.add_argument("--json", action="store_true", help="Print JSON for metadata validation.")
+
+    package_parser = subparsers.add_parser("package", help="Packaging and release-readiness checks.")
+    package_subparsers = package_parser.add_subparsers(dest="package_command")
+    package_subparsers.add_parser("inspect", help="Inspect local packaging metadata and project layout.")
+    package_subparsers.add_parser("build-check", help="Check local package build readiness without publishing.")
+    package_subparsers.add_parser("smoke-test", help="Run local non-mutating CLI smoke checks.")
 
     return parser
 
@@ -789,6 +801,24 @@ def _cmd_plugin_validate(offline: bool, metadata: bool, rt_safety: bool, json_ou
     return 0 if result.passed else 1
 
 
+def _cmd_package_inspect() -> int:
+    report = run_package_inspect()
+    print(render_package_report("PipeTune Package Inspect", report))
+    return 0 if report.passed else 1
+
+
+def _cmd_package_build_check() -> int:
+    report = run_package_build_check()
+    print(render_package_report("PipeTune Package Build Check", report))
+    return 0 if report.passed else 1
+
+
+def _cmd_package_smoke_test() -> int:
+    report = run_package_smoke_test()
+    print(render_package_report("PipeTune Package Smoke Test", report))
+    return 0 if report.passed else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -923,6 +953,15 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_plugin_clean(args.local)
         if args.plugin_command == "validate":
             return _cmd_plugin_validate(args.offline, args.metadata, args.rt_safety, args.json)
+        parser.print_help()
+        return 1
+    if args.command == "package":
+        if args.package_command == "inspect":
+            return _cmd_package_inspect()
+        if args.package_command == "build-check":
+            return _cmd_package_build_check()
+        if args.package_command == "smoke-test":
+            return _cmd_package_smoke_test()
         parser.print_help()
         return 1
 
