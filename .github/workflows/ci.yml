@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Python tests (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+      - name: Run pytest
+        run: python -m pytest -q
+
+  packaging-check:
+    name: Packaging checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+      - name: Package inspect
+        run: pipetune package inspect
+      - name: Package build-check
+        run: pipetune package build-check
+      - name: Package smoke-test
+        run: pipetune package smoke-test
+      - name: Profile database validation
+        run: pipetune profiles validate-db
+      - name: Release check
+        run: pipetune release check
+
+  cli-smoke-check:
+    name: CLI smoke check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+      - name: Check version
+        run: pipetune version
+      - name: Package inspect
+        run: pipetune package inspect
+      - name: Package smoke-test
+        run: pipetune package smoke-test
+
+  artifact-hygiene:
+    name: Artifact hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+      - name: Artifact check
+        run: pipetune package artifact-check
+
+  plugin-validation:
+    name: Plugin validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+      - name: Install LV2 build and validation tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y gcc make lv2-dev lilv-utils
+      - name: Plugin metadata validation
+        run: pipetune plugin validate --metadata
+      - name: Plugin RT-safety validation
+        run: pipetune plugin validate --rt-safety

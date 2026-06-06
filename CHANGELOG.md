@@ -1,5 +1,64 @@
 # Changelog
 
+## [0.7.0] - 2026-06-06
+### Added
+- Profile database directory structure: `profiles/headphones/`, `profiles/speakers/`, `profiles/microphones/`, `profiles/bluetooth/`, `profiles/templates/`.
+- Four example profiles clearly marked as drafts: Sennheiser HD 650 (headphone, quality B), generic laptop speaker (quality C, with safeguards), built-in mic speech clarity (quality C), Bluetooth policy note (quality D).
+- New `pipetune/profiles/` Python module: `schema.py`, `loader.py`, `validator.py`, `database.py`.
+- Profile metadata schema with required fields, quality classes (A/B/C/D), and safety statuses (safe/draft/experimental/rejected).
+- New `pipetune profiles validate-db` command (and `--json`) to validate all profiles in the database.
+- New `pipetune profiles list` command with `--type` and `--quality` filters.
+- New `pipetune profiles show <profile_id>` command for detailed profile inspection.
+- New `pipetune profiles search <query>` command for keyword search.
+- Contribution templates: `profiles/templates/profile-request.md` and `profiles/templates/profile-submission.md`.
+- New `docs/profile-database.md` explaining quality classes, safety statuses, HPF requirements, and licensing.
+- New `docs/profile-contribution-guide.md` with submission instructions, metadata requirements, and review process.
+- Tests for profile database structure, metadata validation, duplicate ID detection, unknown quality class/status rejection, missing source/license rejection, laptop-speaker HPF/limiter requirements, measurement-correction draft requirement, profile list/show/search, CLI integration, CI workflow validation, and docs existence checks.
+- `pipetune release check` now includes `pipetune profiles validate-db` as a release gate.
+- CI workflow updated to run `pipetune profiles validate-db` in the packaging-check job.
+
+### Changed
+- Project version updated to `0.7.0`.
+- `pipetune version` codename updated to `Device Profile Database and Contribution Workflow Foundation`.
+- `pyproject.toml` version and description updated.
+
+### Safety
+- Profile commands are read-only: no profile is installed, applied, or auto-routed.
+- No global LV2 installation is performed.
+- No audio routing is changed.
+- No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration is modified.
+- Rejected profiles are blocked from export/apply by safety_status enforcement.
+- Unsourced and unlicensed profiles are rejected by validation.
+- Laptop-speaker profiles without HPF and limiter safeguards are rejected.
+- No GUI, daemon, Flatpak, COPR automation, or new DSP features were added.
+
+## [0.6.1] - 2026-06-06
+### Added
+- New `pipetune package artifact-check` command (and `--json`) to detect forbidden local and staged artifacts.
+- New `pipetune release check` command (and `--json`) to run all local release quality gates in one step.
+- New `pipetune/release.py` module with `run_release_check()`, `render_release_check_report()`, and `render_release_check_json()`.
+- GitHub Actions CI workflow at `.github/workflows/ci.yml` with five jobs: Python tests (3.11/3.12), packaging checks, CLI smoke check, artifact hygiene, and plugin validation.
+- New `scripts/fresh-checkout-smoke.sh` script for fresh-checkout install verification via `git archive`.
+- New `docs/ci.md` explaining CI jobs, safe checks, LV2 optional deps, and local reproduction steps.
+- Tests for artifact-check (clean tree, .so/.o detection, dist/build/egg-info detection, staged artifact detection), release check (pass/warn/fail, JSON, no system mutation), CI workflow existence, fresh checkout script existence, and build-check cleanup behavior.
+- `build`, `setuptools`, and `wheel` added to `dev` optional-dependencies in `pyproject.toml`.
+
+### Changed
+- Project version updated to `0.6.1`.
+- `pipetune version` codename updated to `Release Quality Gates and CI Foundation`.
+- `pipetune package build-check` now cleans up `dist/` artifacts after inspection (no leftover dist/ after each check).
+- `pipetune package build-check` now reports which archive names were verified before cleanup.
+- `render_package_report_json()` added to `pipetune/packaging.py` for JSON output of any `PackageReport`.
+- `ARCHIVE_FORBIDDEN_PATTERNS` narrowed: removed `*/reports/*` (was incorrectly matching `pipetune/reports/` Python module) and `*.egg-info/*` (standard sdist metadata).
+- `STAGED_FORBIDDEN_PATTERNS` defined as a named constant for testability.
+- `docs/release-checklist.md` updated with new release sequence using `pipetune release check` and `pipetune package artifact-check`.
+
+### Safety
+- Artifact-check is read-only: no deletion, no cleanup, no mutation.
+- Release check does not upload packages, tag automatically, push, or install system packages.
+- CI does not install LV2 plugins globally, route audio, or modify audio/system/user config.
+- No GUI, daemon, Flatpak, COPR automation, or DSP feature expansion was added.
+
 ## [0.6.0] - 2026-06-03
 ### Added
 - New `pipetune package inspect` command for package metadata and project layout inspection.

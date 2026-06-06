@@ -33,9 +33,28 @@ from pipetune.measurement.sweep import generate_log_sweep, metadata_path_for_wav
 from pipetune.measurement.wav import inspect_wav, render_wav_diagnostics
 from pipetune.packaging import (
     render_package_report,
+    render_package_report_json,
+    run_package_artifact_check,
     run_package_build_check,
     run_package_inspect,
     run_package_smoke_test,
+)
+from pipetune.profiles.database import (
+    list_profiles,
+    render_profile_detail,
+    render_profile_list,
+    search_profiles,
+    show_profile,
+)
+from pipetune.profiles.validator import (
+    render_profile_db_report,
+    render_profile_db_report_json,
+    run_profile_db_validation,
+)
+from pipetune.release import (
+    render_release_check_json,
+    render_release_check_report,
+    run_release_check,
 )
 from pipetune.plugin.safeguard import (
     clean_plugin_local,
@@ -279,6 +298,35 @@ def _build_parser() -> argparse.ArgumentParser:
     package_subparsers.add_parser("inspect", help="Inspect local packaging metadata and project layout.")
     package_subparsers.add_parser("build-check", help="Check local package build readiness without publishing.")
     package_subparsers.add_parser("smoke-test", help="Run local non-mutating CLI smoke checks.")
+    artifact_check_parser = package_subparsers.add_parser(
+        "artifact-check", help="Check repo for forbidden artifacts that must not be staged or committed."
+    )
+    artifact_check_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    release_parser = subparsers.add_parser("release", help="Release quality gate checks.")
+    release_subparsers = release_parser.add_subparsers(dest="release_command")
+    release_check_parser = release_subparsers.add_parser(
+        "check", help="Run all local release quality gates without publishing or uploading."
+    )
+    release_check_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    profiles_parser = subparsers.add_parser("profiles", help="Device profile database commands.")
+    profiles_subparsers = profiles_parser.add_subparsers(dest="profiles_command")
+
+    validate_db_parser = profiles_subparsers.add_parser(
+        "validate-db", help="Validate all profiles in the device profile database."
+    )
+    validate_db_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    list_profiles_parser = profiles_subparsers.add_parser("list", help="List profiles in the database.")
+    list_profiles_parser.add_argument("--type", dest="profile_type", help="Filter by profile type.")
+    list_profiles_parser.add_argument("--quality", dest="quality_class", help="Filter by quality class (A/B/C/D).")
+
+    show_parser = profiles_subparsers.add_parser("show", help="Show details for a specific profile.")
+    show_parser.add_argument("profile_id", help="Profile ID to show.")
+
+    search_parser = profiles_subparsers.add_parser("search", help="Search profiles by keyword.")
+    search_parser.add_argument("query", help="Search query.")
 
     return parser
 
@@ -819,6 +867,54 @@ def _cmd_package_smoke_test() -> int:
     return 0 if report.passed else 1
 
 
+def _cmd_package_artifact_check(json_output: bool) -> int:
+    report = run_package_artifact_check()
+    if json_output:
+        print(render_package_report_json("artifact-check", report))
+    else:
+        print(render_package_report("PipeTune Package Artifact Check", report))
+    return 0 if report.passed else 1
+
+
+def _cmd_release_check(json_output: bool) -> int:
+    report = run_release_check()
+    if json_output:
+        print(render_release_check_json(report))
+    else:
+        print(render_release_check_report(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_profiles_validate_db(json_output: bool) -> int:
+    report = run_profile_db_validation()
+    if json_output:
+        print(render_profile_db_report_json(report))
+    else:
+        print(render_profile_db_report(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_profiles_list(profile_type: str | None, quality_class: str | None) -> int:
+    profiles = list_profiles(profile_type=profile_type, quality_class=quality_class)
+    print(render_profile_list(profiles))
+    return 0
+
+
+def _cmd_profiles_show(profile_id: str) -> int:
+    profile = show_profile(profile_id)
+    if profile is None:
+        print(f"Profile not found: {profile_id}")
+        return 1
+    print(render_profile_detail(profile))
+    return 0
+
+
+def _cmd_profiles_search(query: str) -> int:
+    profiles = search_profiles(query)
+    print(render_profile_list(profiles))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -962,6 +1058,24 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_package_build_check()
         if args.package_command == "smoke-test":
             return _cmd_package_smoke_test()
+        if args.package_command == "artifact-check":
+            return _cmd_package_artifact_check(args.json)
+        parser.print_help()
+        return 1
+    if args.command == "release":
+        if args.release_command == "check":
+            return _cmd_release_check(args.json)
+        parser.print_help()
+        return 1
+    if args.command == "profiles":
+        if args.profiles_command == "validate-db":
+            return _cmd_profiles_validate_db(args.json)
+        if args.profiles_command == "list":
+            return _cmd_profiles_list(args.profile_type, args.quality_class)
+        if args.profiles_command == "show":
+            return _cmd_profiles_show(args.profile_id)
+        if args.profiles_command == "search":
+            return _cmd_profiles_search(args.query)
         parser.print_help()
         return 1
 

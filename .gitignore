@@ -34,7 +34,6 @@ measurements/
 measurements/**/*.wav
 measurements/**/*.csv
 measurements/**/*.json
-profiles/**/*.toml
 
 # Local plugin build artifacts
 plugins/lv2/**/*.so

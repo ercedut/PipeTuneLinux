@@ -87,16 +87,29 @@
 - Attempt compiled `.so` offline validation when a local build artifact is present.
 - Keep DSP scope unchanged and keep plugin work non-mutating.
 
-## v0.6.0 - Packaging and Installability Foundation (Current)
+## v0.6.0 - Packaging and Installability Foundation (Done)
 - Harden Python packaging metadata and deliberate source distribution inclusion.
 - Add package inspect, build-check, and smoke-test commands.
 - Add install and release checklist documentation.
 - Verify source/wheel readiness without publishing packages.
 - Keep normal verification rootless and non-mutating.
+
+## v0.6.1 - Release Quality Gates and CI Foundation (Current)
+- Add `pipetune package artifact-check` for local and staged artifact hygiene detection.
+- Add `pipetune release check` as a single-command release gate with pass/warn/fail verdict.
+- Add GitHub Actions CI with five jobs: tests, packaging, CLI smoke, artifact hygiene, plugin validation.
+- Add `scripts/fresh-checkout-smoke.sh` for fresh-checkout install verification.
+- Harden `package build-check` to clean up dist/ after inspection.
 - Do not add GUI, daemon behavior, routing, global LV2 install, COPR automation, Flatpak, or DSP features.
 
-## v0.7 - WirePlumber Helper
-- Session policy helper tooling for profile routing and policy diagnostics.
+## v0.7.0 - Device Profile Database and Contribution Workflow Foundation (Current)
+- Community-maintainable profile database for headphones, laptop speakers, microphones, and Bluetooth.
+- Profile metadata schema with quality classes (A/B/C/D), safety statuses, source tracking, and license fields.
+- Profile validation command: `pipetune profiles validate-db`.
+- Profile listing, search, and inspection commands: `pipetune profiles list/show/search`.
+- Contribution templates and profile review documentation.
+- Integration with release check and CI pipeline.
+- No auto-apply, no global LV2 install, no audio routing, no system config mutation.
 - Guardrails for non-destructive integration.
 
 ## v1.0 - Stable Profile Generation
