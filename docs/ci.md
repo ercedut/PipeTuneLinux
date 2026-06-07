@@ -27,9 +27,14 @@ The plugin validation job installs system LV2 tools via `apt-get`:
 
 ```bash
 sudo apt-get install -y gcc make lv2-dev lilv-utils
+sudo apt-get install -y sord-validate || true
 ```
 
 These are only needed for `lv2_validate`. The RT-safety check (`pipetune plugin validate --rt-safety`) is pure Python and requires no system packages. If `lv2_validate` is unavailable, the metadata validation will report it clearly.
+
+### Ubuntu package note
+
+The package name `sord` does not exist in the Ubuntu 24.04 (noble) repository used by GitHub Actions runners. The correct optional package for the `sord_validate` helper is `sord-validate`, which may or may not be available depending on the Ubuntu image version. CI installs it with `|| true` so that its absence does not fail the build. PipeTune treats a missing optional external validator helper as a warning while preserving all internal metadata checks.
 
 ## Why CI does not globally install plugins
 
@@ -65,6 +70,7 @@ For LV2 metadata validation, install:
 
 ```bash
 sudo apt-get install -y gcc make lv2-dev lilv-utils  # Debian/Ubuntu
+sudo apt-get install -y sord-validate || true         # optional helper; may not exist on noble
 sudo dnf install -y gcc make lv2-devel lilv-utils    # Fedora
 ```
 
