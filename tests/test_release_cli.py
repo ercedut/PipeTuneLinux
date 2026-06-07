@@ -302,6 +302,93 @@ def test_docs_release_checklist_exists() -> None:
 
 
 # ---------------------------------------------------------------------------
+# CI dependency gate — v0.9.2
+# ---------------------------------------------------------------------------
+
+
+def test_ci_workflow_does_not_contain_bare_sord() -> None:
+    import re
+    ci_path = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+    assert ci_path.exists()
+    content = ci_path.read_text(encoding="utf-8")
+    match = re.search(r"apt.get install[^#\n]*\bsord\b(?!-validate)", content)
+    assert match is None, (
+        f"CI workflow must not install bare 'sord' package (not available on Ubuntu noble). "
+        f"Found: {match.group() if match else 'none'}"
+    )
+
+
+def test_ci_workflow_contains_optional_sord_validate() -> None:
+    ci_path = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+    assert ci_path.exists()
+    content = ci_path.read_text(encoding="utf-8")
+    assert "sord-validate" in content, "CI workflow should install sord-validate (optionally)"
+
+
+def test_ci_workflow_contains_validator_diagnostic_commands() -> None:
+    ci_path = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+    assert ci_path.exists()
+    content = ci_path.read_text(encoding="utf-8")
+    assert "lv2_validate" in content
+    assert "sord_validate" in content
+
+
+def test_release_check_includes_ci_dependency_gate() -> None:
+    report = rel.run_release_check()
+    ci_checks = [c for c in report.checks if "bare sord" in c or "CI workflow" in c]
+    assert ci_checks, (
+        "release check must include CI dependency gate check. "
+        f"Got checks: {report.checks}"
+    )
+
+
+def test_release_check_includes_wireplumber_install_safety_gate() -> None:
+    report = rel.run_release_check()
+    wp_checks = [c for c in report.checks if "install-preflight" in c or "install-guide" in c or "WirePlumber install safety" in c]
+    assert wp_checks, (
+        "release check must include WirePlumber install safety gate. "
+        f"Got checks: {report.checks}"
+    )
+
+
+def test_release_check_fails_if_ci_contains_bare_sord(monkeypatch) -> None:
+    import re
+    from pipetune import release as release_mod
+
+    def fake_ci_check(checks: list, errors: list) -> None:
+        errors.append(
+            "CI workflow installs bare 'sord' package which does not exist on Ubuntu noble"
+        )
+
+    monkeypatch.setattr(release_mod, "_check_ci_no_bare_sord", fake_ci_check)
+    report = release_mod.run_release_check()
+    assert any("sord" in e for e in report.errors)
+    assert report.verdict == "fail"
+
+
+def test_release_check_does_not_write_files(monkeypatch, tmp_path) -> None:
+    files_before = set(tmp_path.rglob("*"))
+    rel.run_release_check()
+    files_after = set(tmp_path.rglob("*"))
+    assert files_after == files_before
+
+
+# ---------------------------------------------------------------------------
+# WirePlumber install safety docs existence — v0.9.2
+# ---------------------------------------------------------------------------
+
+
+def test_wireplumber_install_rollback_doc_exists() -> None:
+    doc = Path(__file__).resolve().parents[1] / "docs" / "wireplumber-rule-install-rollback.md"
+    assert doc.exists(), "docs/wireplumber-rule-install-rollback.md is missing"
+
+
+def test_wireplumber_state_integrity_doc_exists() -> None:
+    doc = Path(__file__).resolve().parents[1] / "docs" / "wireplumber-rule-state-integrity.md"
+    assert doc.exists(), "docs/wireplumber-rule-state-integrity.md is missing"
+
+
+# ---------------------------------------------------------------------------
 # Build-check hardening — cleanup behavior
 # ---------------------------------------------------------------------------
 
@@ -343,7 +430,7 @@ def _write_minimal_repo(root: Path) -> None:
             'build-backend = "setuptools.build_meta"',
             "[project]",
             'name = "pipetune-linux"',
-            'version = "0.9.1"',
+            'version = "0.9.2"',
             'description = "test"',
             'readme = "README.md"',
             'requires-python = ">=3.11"',

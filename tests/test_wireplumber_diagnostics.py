@@ -26,8 +26,8 @@ def _load_fixture(name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def test_version_is_091() -> None:
-    assert pipetune.__version__ == "0.9.1"
+def test_version_is_092() -> None:
+    assert pipetune.__version__ == "0.9.2"
 
 
 def test_version_codename_wireplumber() -> None:

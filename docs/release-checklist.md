@@ -14,8 +14,10 @@ Use this checklist before tagging a PipeTune Linux release.
 - **Do not commit `.so` or `.o` files.** These are compiled plugin artifacts and must be gitignored.
 - **Do not commit `dist/` or `build/`.** These are build artifacts and must be gitignored.
 - **Do not commit `*.egg-info/`.** This is a development artifact and must be gitignored.
+- **Do not commit generated preview `.lua` files.** These are gitignored under `previews/wireplumber/*`.
 - **Do not tag with a failing release check.** If `pipetune release check` reports fail, fix the issue first.
 - **Do not claim audio improvement without measurement evidence.** Profiles without source documentation are rejected.
+- **Do not use bare Ubuntu package `sord` in CI.** It does not exist on Ubuntu 24.04 noble. Use `sord-validate || true` instead.
 
 ## Cleaning Local Development Artifacts Before Release
 

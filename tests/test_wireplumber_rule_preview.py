@@ -29,8 +29,8 @@ from pipetune.wireplumber.recommend import RouteRecommendReport, run_route_recom
 # ---------------------------------------------------------------------------
 
 
-def test_version_is_091() -> None:
-    assert pipetune.__version__ == "0.9.1"
+def test_version_is_092() -> None:
+    assert pipetune.__version__ == "0.9.2"
 
 
 def test_codename_is_bluetooth_or_preview() -> None:

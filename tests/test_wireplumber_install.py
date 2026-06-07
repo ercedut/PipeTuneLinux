@@ -44,8 +44,8 @@ def _isolated_dirs(tmp_path: Path) -> tuple[Path, Path]:
 # Version check
 # ---------------------------------------------------------------------------
 
-def test_version_is_091() -> None:
-    assert pipetune.__version__ == "0.9.1"
+def test_version_is_092() -> None:
+    assert pipetune.__version__ == "0.9.2"
 
 
 # ---------------------------------------------------------------------------

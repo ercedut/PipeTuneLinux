@@ -52,3 +52,11 @@ docs/system-audits/**/hda-codec-files/
 !docs/system-audits/**/FIX_PLAN.md
 !docs/system-audits/**/PUBLIC_SUMMARY.md
 !docs/system-audits/**/.gitkeep
+
+# Generated WirePlumber preview files (not source files)
+previews/wireplumber/*
+!previews/wireplumber/.gitkeep
+
+# Generated WirePlumber report outputs
+reports/wireplumber/*
+!reports/wireplumber/.gitkeep
