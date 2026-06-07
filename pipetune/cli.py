@@ -46,6 +46,38 @@ from pipetune.wireplumber.bluetooth import (
     render_bluetooth_policy_audit_json,
     run_bluetooth_policy_audit,
 )
+from pipetune.wireplumber.install import (
+    render_install_report,
+    render_install_report_json,
+    run_install_rule,
+)
+from pipetune.wireplumber.rollback import (
+    render_rollback_report,
+    render_rollback_report_json,
+    run_rollback_rule,
+)
+from pipetune.wireplumber.state import (
+    render_list_rules,
+    render_list_rules_json,
+    render_rule_status,
+    render_rule_status_json,
+    run_list_rules,
+    run_rule_status,
+)
+from pipetune.wireplumber.integrity import (
+    render_cleanup_report,
+    render_cleanup_report_json,
+    render_repair_report,
+    render_repair_report_json,
+    render_state_doctor,
+    render_state_doctor_json,
+    render_verify_rule,
+    render_verify_rule_json,
+    run_cleanup_rolled_back,
+    run_repair_rule_state,
+    run_state_doctor,
+    run_verify_rule,
+)
 from pipetune.wireplumber.diagnose import (
     build_route_explain_text,
     run_route_audit,
@@ -366,6 +398,59 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     validate_preview_parser.add_argument("path", type=Path, help="Path to the preview file to validate.")
     validate_preview_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    install_rule_parser = wireplumber_subparsers.add_parser(
+        "install-rule",
+        help="Install a WirePlumber rule from a validated preview (--user-only and --dry-run|--confirm-install required).",
+    )
+    install_rule_parser.add_argument("preview_path", help="Path to the validated preview file to install.")
+    install_rule_parser.add_argument("--user-only", action="store_true", required=True, help="Required: user-level install only.")
+    install_rule_mode = install_rule_parser.add_mutually_exclusive_group(required=True)
+    install_rule_mode.add_argument("--dry-run", action="store_true", help="Show what would be installed without writing anything.")
+    install_rule_mode.add_argument("--confirm-install", action="store_true", help="Actually install the rule to user-level config.")
+    install_rule_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    rollback_rule_parser = wireplumber_subparsers.add_parser(
+        "rollback-rule",
+        help="Rollback an installed WirePlumber rule by install_id (--dry-run|--confirm-rollback required).",
+    )
+    rollback_rule_parser.add_argument("install_id", help="The install_id to rollback.")
+    rollback_rule_mode = rollback_rule_parser.add_mutually_exclusive_group(required=True)
+    rollback_rule_mode.add_argument("--dry-run", action="store_true", help="Show what would be rolled back without changing anything.")
+    rollback_rule_mode.add_argument("--confirm-rollback", action="store_true", help="Actually rollback the installed rule.")
+    rollback_rule_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    rule_status_parser = wireplumber_subparsers.add_parser("rule-status", help="Show WirePlumber rule install status (read-only).")
+    rule_status_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    list_rules_parser = wireplumber_subparsers.add_parser("list-rules", help="List all installed WirePlumber rules (read-only).")
+    list_rules_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    state_doctor_parser = wireplumber_subparsers.add_parser(
+        "rule-state-doctor", help="Check WirePlumber rule install state integrity (read-only)."
+    )
+    state_doctor_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    verify_rule_parser = wireplumber_subparsers.add_parser(
+        "verify-rule", help="Verify an installed WirePlumber rule by install_id (read-only)."
+    )
+    verify_rule_parser.add_argument("install_id", help="The install_id to verify.")
+    verify_rule_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    repair_rule_parser = wireplumber_subparsers.add_parser(
+        "repair-rule-state", help="Propose WirePlumber rule state repair actions (dry-run only)."
+    )
+    repair_rule_parser.add_argument("--dry-run", action="store_true", required=True, help="Required: dry-run only.")
+    repair_rule_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    cleanup_rules_parser = wireplumber_subparsers.add_parser(
+        "cleanup-rolled-back-rules",
+        help="Remove safe rolled-back WirePlumber rule manifest entries (--dry-run|--confirm-cleanup required).",
+    )
+    cleanup_mode = cleanup_rules_parser.add_mutually_exclusive_group(required=True)
+    cleanup_mode.add_argument("--dry-run", action="store_true")
+    cleanup_mode.add_argument("--confirm-cleanup", action="store_true")
+    cleanup_rules_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
 
     route_parser = subparsers.add_parser("route", help="PipeWire routing diagnostics.")
     route_subparsers = route_parser.add_subparsers(dest="route_command")
@@ -1021,6 +1106,91 @@ def _cmd_wireplumber_validate_preview(path: Path, json_output: bool) -> int:
     return 0 if report.passed else 1
 
 
+def _cmd_wireplumber_install_rule(
+    preview_path: str,
+    user_only: bool,
+    dry_run: bool,
+    confirm_install: bool,
+    json_output: bool,
+) -> int:
+    report = run_install_rule(
+        preview_path, user_only=user_only, dry_run=dry_run, confirm_install=confirm_install
+    )
+    if json_output:
+        print(render_install_report_json(report))
+    else:
+        print(render_install_report(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_wireplumber_rollback_rule(
+    install_id: str,
+    dry_run: bool,
+    confirm_rollback: bool,
+    json_output: bool,
+) -> int:
+    report = run_rollback_rule(install_id, dry_run=dry_run, confirm_rollback=confirm_rollback)
+    if json_output:
+        print(render_rollback_report_json(report))
+    else:
+        print(render_rollback_report(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_wireplumber_rule_status(json_output: bool) -> int:
+    report = run_rule_status()
+    if json_output:
+        print(render_rule_status_json(report))
+    else:
+        print(render_rule_status(report))
+    return 0
+
+
+def _cmd_wireplumber_list_rules(json_output: bool) -> int:
+    report = run_list_rules()
+    if json_output:
+        print(render_list_rules_json(report))
+    else:
+        print(render_list_rules(report))
+    return 0
+
+
+def _cmd_wireplumber_state_doctor(json_output: bool) -> int:
+    report = run_state_doctor()
+    if json_output:
+        print(render_state_doctor_json(report))
+    else:
+        print(render_state_doctor(report))
+    return 0 if report.verdict != "fail" else 1
+
+
+def _cmd_wireplumber_verify_rule(install_id: str, json_output: bool) -> int:
+    report = run_verify_rule(install_id)
+    if json_output:
+        print(render_verify_rule_json(report))
+    else:
+        print(render_verify_rule(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_wireplumber_repair_rule_state(json_output: bool) -> int:
+    report = run_repair_rule_state()
+    if json_output:
+        print(render_repair_report_json(report))
+    else:
+        print(render_repair_report(report))
+    return 0
+
+
+def _cmd_wireplumber_cleanup_rolled_back(dry_run: bool, confirm_cleanup: bool, json_output: bool) -> int:
+    report = run_cleanup_rolled_back(dry_run=dry_run, confirm_cleanup=confirm_cleanup)
+    if json_output:
+        print(render_cleanup_report_json(report))
+    else:
+        print(render_cleanup_report(report))
+    return 0 if report.passed else 1
+
+
 def _cmd_route_recommend(json_output: bool) -> int:
     report = run_route_recommend()
     if json_output:
@@ -1221,6 +1391,33 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_wireplumber_suggest_rule(args.dry_run, args.user_only, args.output, args.json)
         if args.wireplumber_command == "validate-preview":
             return _cmd_wireplumber_validate_preview(args.path, args.json)
+        if args.wireplumber_command == "install-rule":
+            return _cmd_wireplumber_install_rule(
+                args.preview_path,
+                args.user_only,
+                args.dry_run,
+                args.confirm_install,
+                args.json,
+            )
+        if args.wireplumber_command == "rollback-rule":
+            return _cmd_wireplumber_rollback_rule(
+                args.install_id,
+                args.dry_run,
+                args.confirm_rollback,
+                args.json,
+            )
+        if args.wireplumber_command == "rule-status":
+            return _cmd_wireplumber_rule_status(args.json)
+        if args.wireplumber_command == "list-rules":
+            return _cmd_wireplumber_list_rules(args.json)
+        if args.wireplumber_command == "rule-state-doctor":
+            return _cmd_wireplumber_state_doctor(args.json)
+        if args.wireplumber_command == "verify-rule":
+            return _cmd_wireplumber_verify_rule(args.install_id, args.json)
+        if args.wireplumber_command == "repair-rule-state":
+            return _cmd_wireplumber_repair_rule_state(args.json)
+        if args.wireplumber_command == "cleanup-rolled-back-rules":
+            return _cmd_wireplumber_cleanup_rolled_back(args.dry_run, args.confirm_cleanup, args.json)
         parser.print_help()
         return 1
     if args.command == "route":

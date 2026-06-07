@@ -95,7 +95,12 @@ jobs:
       - name: Install LV2 build and validation tools
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y gcc make lv2-dev lilv-utils
+          sudo apt-get install -y gcc make lv2-dev lilv-utils sord
+      - name: Diagnose external validator environment
+        run: |
+          which lv2_validate || echo "lv2_validate: not found"
+          which sord_validate || echo "sord_validate: not found"
+          lv2_validate --help 2>&1 | head -3 || true
       - name: Plugin metadata validation
         run: pipetune plugin validate --metadata
       - name: Plugin RT-safety validation

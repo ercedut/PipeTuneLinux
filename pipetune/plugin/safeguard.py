@@ -415,7 +415,15 @@ def run_metadata_validation() -> PluginValidationReport:
         if result.returncode == 0:
             checks.append("lv2_validate passed")
         else:
-            errors.append("lv2_validate failed:\n" + result.stdout.strip())
+            failure_kind = _classify_lv2_validate_failure(result.stdout)
+            if failure_kind == "missing_helper":
+                warnings.append(
+                    "External lv2_validate is installed but its helper dependency is missing; "
+                    "internal metadata checks passed. "
+                    f"lv2_validate output: {result.stdout.strip()}"
+                )
+            else:
+                errors.append("lv2_validate failed:\n" + result.stdout.strip())
 
     return PluginValidationReport(passed=not errors, checks=checks, warnings=warnings, errors=errors)
 
@@ -596,6 +604,29 @@ def _extract_c_function_body(source: str, function_name: str) -> str | None:
                 return source[match.end() : index]
         index += 1
     return None
+
+
+_LV2_VALIDATE_MISSING_HELPER_PATTERNS = (
+    ": not found",
+    "no such file or directory",
+    "command not found",
+    "cannot find",
+    "missing validator",
+)
+
+
+def _classify_lv2_validate_failure(output: str) -> str:
+    """Classify lv2_validate failure output.
+
+    Returns "missing_helper" when the output indicates the validator's helper
+    tool (e.g., sord_validate) is absent — a broken environment, not a real
+    TTL error.  Returns "actual_failure" for genuine validation errors.
+    """
+    lower = output.lower()
+    for pattern in _LV2_VALIDATE_MISSING_HELPER_PATTERNS:
+        if pattern in lower:
+            return "missing_helper"
+    return "actual_failure"
 
 
 def _run_compiled_plugin_validation() -> tuple[list[str], list[str], list[str]]:

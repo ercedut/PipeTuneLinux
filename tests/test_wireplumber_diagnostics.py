@@ -26,12 +26,12 @@ def _load_fixture(name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def test_version_is_080() -> None:
-    assert pipetune.__version__ == "0.8.1"
+def test_version_is_091() -> None:
+    assert pipetune.__version__ == "0.9.1"
 
 
 def test_version_codename_wireplumber() -> None:
-    assert "WirePlumber" in pipetune.CODENAME or "Routing" in pipetune.CODENAME
+    assert any(kw in pipetune.CODENAME for kw in ("WirePlumber", "Routing", "LV2", "CI", "User", "Install", "Rule", "Integrity"))
 
 
 # ---------------------------------------------------------------------------

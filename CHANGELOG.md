@@ -1,5 +1,67 @@
 # Changelog
 
+## [0.9.1] - 2026-06-06
+### Added
+- New `pipetune wireplumber rule-state-doctor` command: read-only integrity check for all installed WirePlumber rules; reports missing files, orphan files, checksum mismatches, and duplicate rule IDs.
+- New `pipetune wireplumber verify-rule <install_id>` command: read-only verification of a single installed rule's file presence and checksum.
+- New `pipetune wireplumber repair-rule-state --dry-run` command: proposes repair actions without modifying any files. Dry-run only for v0.9.1.
+- New `pipetune wireplumber cleanup-rolled-back-rules --dry-run|--confirm-cleanup` command: removes manifest entries that are rolled_back and have no installed file.
+- Duplicate install protection in `install-rule`: refuses if the same preview checksum is already active.
+- Checksum mismatch protection in `rollback-rule`: refuses to delete installed file if its content doesn't match the manifest checksum.
+- New `pipetune/wireplumber/integrity.py` module.
+- 26 new tests (484 total).
+
+### Changed
+- Project version updated to `0.9.1`.
+- `pipetune version` codename updated to `WirePlumber Rule Install State Integrity and Recovery`.
+
+### Safety
+- All new commands are read-only except `cleanup-rolled-back-rules --confirm-cleanup` which removes only safe manifest entries.
+- No WirePlumber rule is auto-removed without explicit `--confirm-cleanup`.
+- No service restarted. No routing changed. No system config modified.
+- Checksum mismatch protection prevents rollback from deleting unexpectedly modified files.
+
+## [0.9.0] - 2026-06-06
+### Added
+- New `pipetune wireplumber install-rule <preview_path> --user-only --dry-run|--confirm-install` command: install a validated WirePlumber rule preview to user-level config (`$XDG_CONFIG_HOME/wireplumber/wireplumber.conf.d/`).
+- New `pipetune wireplumber rollback-rule <install_id> --dry-run|--confirm-rollback` command: remove a PipeTune-installed rule and update the manifest.
+- New `pipetune wireplumber rule-status` and `pipetune wireplumber list-rules` commands (read-only): query the install manifest.
+- Manifest-based install tracking: each install generates a unique `install_id`, writes rule file as `90-pipetune-<install_id>.lua`, and records checksum, timestamps, and version in `$PIPETUNE_HOME/wireplumber-rules/manifests.json`.
+- New modules: `pipetune/wireplumber/paths.py`, `manifest.py`, `install.py`, `rollback.py`, `state.py`.
+- XDG_CONFIG_HOME and PIPETUNE_HOME env vars supported for test isolation.
+- 30 new tests (458 total).
+
+### Changed
+- Project version updated to `0.9.0`.
+- `pipetune version` codename updated to `User-Level WirePlumber Rule Install/Rollback Foundation`.
+
+### Safety
+- Install requires `--user-only` and either `--dry-run` or `--confirm-install`; refused if neither is provided.
+- Dry-run writes nothing.
+- System paths (`/etc/`, `/usr/`, `/lib/`, `/sys/`) and `~/.config/wireplumber` as install source are refused.
+- Preview files without `PREVIEW ONLY` and `NOT INSTALLED` safety markers are refused.
+- No service is restarted. No routing is changed.
+- All JSON outputs include safety block confirming `restarted_services: false`, `changed_routing: false`, `system_level: false`.
+- Rule will not take effect until the user manually reloads WirePlumber (explicitly stated in output).
+
+## [0.8.2] - 2026-06-06
+### Fixed
+- `pipetune plugin validate --metadata` no longer fails when `lv2_validate` is installed but its helper dependency (e.g., `sord_validate`) is missing from the environment.
+- When `lv2_validate` fails with a missing-helper output pattern (`not found`, `No such file or directory`, `command not found`), the result is now a `warn` instead of `fail`.
+- Real TTL/plugin validation errors from a complete `lv2_validate` environment still fail as before.
+- Internal PipeTune metadata checks (TTL files, port docs, control ranges, URI consistency) are unchanged and still fail on genuine errors.
+
+### Changed
+- CI `plugin-validation` job now installs the `sord` package alongside `lilv-utils` so that `lv2_validate` has its `sord_validate` helper available.
+- CI `plugin-validation` job now runs a diagnostic step showing `lv2_validate` and `sord_validate` availability before running validation.
+- Added `_classify_lv2_validate_failure()` helper in `safeguard.py` to classify `lv2_validate` output as `missing_helper` or `actual_failure`.
+- Project version updated to `0.8.2`.
+- `pipetune version` codename updated to `CI LV2 Validator Dependency Handling Patch`.
+
+### Safety
+- No validation was loosened. Internal metadata checks remain strict.
+- Only the external optional validator's environment-broken case is now a warning.
+
 ## [0.8.1] - 2026-06-06
 ### Added
 - New `pipetune bluetooth policy-audit` command: detects Bluetooth audio devices, identifies active profile (A2DP vs HSP/HFP), reports codec hints, and warns when HSP/HFP is active during music use.

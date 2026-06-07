@@ -1,4 +1,4 @@
 """PipeTune Linux package metadata."""
 
-__version__ = "0.8.1"
-CODENAME = "WirePlumber Rule Preview and Bluetooth Policy Hardening"
+__version__ = "0.9.1"
+CODENAME = "WirePlumber Rule Install State Integrity and Recovery"

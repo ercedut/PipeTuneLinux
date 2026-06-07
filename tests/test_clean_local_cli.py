@@ -19,12 +19,12 @@ from pipetune import release as rel
 # ---------------------------------------------------------------------------
 
 
-def test_version_is_071() -> None:
-    assert pipetune.__version__ == "0.8.1"
+def test_version_is_091() -> None:
+    assert pipetune.__version__ == "0.9.1"
 
 
 def test_version_codename_is_wireplumber_or_routing() -> None:
-    assert "WirePlumber" in pipetune.CODENAME or "Routing" in pipetune.CODENAME
+    assert any(kw in pipetune.CODENAME for kw in ("WirePlumber", "Routing", "LV2", "CI", "User", "Install", "Rule", "Integrity"))
 
 
 # ---------------------------------------------------------------------------

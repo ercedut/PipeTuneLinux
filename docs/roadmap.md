@@ -124,12 +124,32 @@
 - `pipetune wireplumber audit`, `pipetune route audit`, `pipetune route explain`.
 - No rule generation, no config writes, no service restarts.
 
-## v0.8.1 - WirePlumber Rule Preview and Bluetooth Policy Hardening (Current)
+## v0.8.1 - WirePlumber Rule Preview and Bluetooth Policy Hardening (Done)
 - Preview-only WirePlumber rule generation (not installed).
 - `pipetune bluetooth policy-audit` for Bluetooth profile diagnostics.
 - `pipetune wireplumber suggest-rule --dry-run --user-only` writes only to repo-local preview paths.
 - `pipetune wireplumber validate-preview` validates preview safety.
 - `pipetune route recommend` provides routing improvement suggestions (read-only).
+
+## v0.8.2 - CI LV2 Validator Dependency Handling Patch (Done)
+- Fix: `lv2_validate` broken-helper failure (e.g., `sord_validate: not found`) is now a `warn` instead of `fail`.
+- Real TTL validation errors still `fail`.
+- CI installs `sord` to provide `sord_validate` alongside `lilv-utils`.
+- CI diagnostic step shows validator tool availability before validation.
+
+## v0.9.0 - User-Level WirePlumber Rule Install/Rollback Foundation (Done)
+- Safe, explicit user-level WirePlumber rule installation from validated previews.
+- `pipetune wireplumber install-rule --user-only --dry-run|--confirm-install`
+- `pipetune wireplumber rollback-rule --dry-run|--confirm-rollback`
+- `pipetune wireplumber rule-status` and `list-rules`
+- Manifest-based install tracking, rollback support.
+- No service restart. No routing change. No system config mutation.
+
+## v0.9.1 - WirePlumber Rule Install State Integrity and Recovery (Current)
+- State doctor, verify-rule, dry-run repair, cleanup rolled-back.
+- Duplicate install protection (same checksum already active → refuse).
+- Checksum mismatch detection (rollback refuses mismatched file deletion).
+- Orphan file reporting.
 
 ## v1.0 - Stable Profile Generation
 - Stable and validated profile generation pipeline for supported devices/stacks.
