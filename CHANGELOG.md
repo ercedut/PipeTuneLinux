@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.9.2] - 2026-06-07
+### Added
+- New `pipetune wireplumber install-preflight` command: read-only preflight check before `install-rule`; reports service status, config directory state, manifest accessibility, existing rule state warnings, and test isolation env var status.
+- New `pipetune wireplumber install-guide` command: prints a safe step-by-step workflow for WirePlumber rule installation including dry-run-first, manual reload, and rollback steps.
+- CI dependency gate in `pipetune release check`: fails if CI workflow installs the non-existent bare `sord` package.
+- WirePlumber install safety gate in `pipetune release check`: fails if `install-preflight` or `install-guide` modules are missing.
+- New docs: `docs/wireplumber-rule-install-rollback.md` and `docs/wireplumber-rule-state-integrity.md`.
+- Preview artifact hygiene: `previews/wireplumber/*.lua` files are now gitignored; `.gitkeep` tracks the directory.
+
+### Changed
+- Project version updated to `0.9.2`.
+- `pipetune version` codename updated to `CI Green and WirePlumber Install Safety Polish`.
+- CI workflow: removed invalid Ubuntu package `sord`; `sord-validate` is now optional (`|| true`); diagnostic step updated to check `which sord-validate`.
+- `install-rule` dry-run output now explicitly shows "No file was written" and the exact confirmed-install command.
+- `install-rule` confirmed output now shows both `--dry-run` and `--confirm-rollback` rollback commands.
+- `rollback-rule` dry-run warning updated to say "no files were removed".
+- `rollback-rule` safety lines updated to include manual reload reminder for post-rollback.
+
+### Safety
+- All new commands are read-only.
+- `install-preflight` creates no files, restarts no services, and changes no routing.
+- `install-guide` is purely informational.
+- No WirePlumber, PipeWire, ALSA, service, system, or user audio configuration was modified.
+- No LV2 plugin installed globally.
+- No audio routing changed.
+
 ## [0.9.1] - 2026-06-06
 ### Added
 - New `pipetune wireplumber rule-state-doctor` command: read-only integrity check for all installed WirePlumber rules; reports missing files, orphan files, checksum mismatches, and duplicate rule IDs.

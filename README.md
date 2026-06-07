@@ -2,6 +2,9 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
+## v0.9.2: CI Green and WirePlumber Install Safety Polish
+v0.9.2 fixes the CI Ubuntu package dependency (`sord` does not exist on noble; `sord-validate || true` is used instead), adds `pipetune wireplumber install-preflight` (read-only environment check before install-rule), `pipetune wireplumber install-guide` (safe step-by-step workflow), CI dependency and WirePlumber safety gates in `pipetune release check`, and improved safety output for install/rollback commands. See `docs/wireplumber-rule-install-rollback.md`.
+
 ## v0.9.1: WirePlumber Rule Install State Integrity and Recovery
 v0.9.1 adds `pipetune wireplumber rule-state-doctor` (read-only), `verify-rule`, `repair-rule-state --dry-run`, `cleanup-rolled-back-rules`, duplicate install protection, and checksum-mismatch rollback protection. No service is restarted. No routing is changed. See `docs/wireplumber-rule-state-integrity.md`.
 
@@ -9,7 +12,7 @@ v0.9.1 adds `pipetune wireplumber rule-state-doctor` (read-only), `verify-rule`,
 v0.9.0 adds safe, explicit user-level WirePlumber rule installation (`install-rule --user-only --confirm-install`), rollback (`rollback-rule --confirm-rollback`), and manifest-based state tracking. Install requires both `--user-only` and a mode flag. Dry-run writes nothing. No service is restarted. Rule takes effect only after user manually reloads WirePlumber. See `docs/wireplumber-rule-install-rollback.md`.
 
 ## v0.8.2: CI LV2 Validator Dependency Handling Patch
-v0.8.2 fixes a CI failure where `lv2_validate` exists but `sord_validate` (its helper) is missing. The failure is now a `warn` instead of `fail`. Real TTL validation errors still fail. CI now installs the `sord` package.
+v0.8.2 fixes a CI failure where `lv2_validate` exists but `sord_validate` (its helper) is missing. The failure is now a `warn` instead of `fail`. Real TTL validation errors still fail.
 
 ## v0.8.1: WirePlumber Rule Preview and Bluetooth Policy Hardening
 v0.8.1 adds `pipetune bluetooth policy-audit` for Bluetooth profile diagnostics, `pipetune wireplumber suggest-rule --user-only --dry-run` to generate a PREVIEW ONLY rule skeleton (never installed), `pipetune wireplumber validate-preview` to validate preview safety, and `pipetune route recommend` for routing improvement suggestions. All commands are read-only. Rule previews are written only to repo-local `previews/wireplumber/` paths. See [docs/bluetooth-policy-diagnostics.md](docs/bluetooth-policy-diagnostics.md) and [docs/wireplumber-rule-preview.md](docs/wireplumber-rule-preview.md).
@@ -235,6 +238,10 @@ All commands are read-only. Rule previews are PREVIEW ONLY and never installed. 
 
 ## WirePlumber Rule Install/Rollback (v0.9.0+)
 ```bash
+# Step-by-step workflow guide (v0.9.2)
+pipetune wireplumber install-guide
+# Preflight check before install (v0.9.2, read-only)
+pipetune wireplumber install-preflight
 # Dry-run first (always recommended)
 pipetune wireplumber install-rule previews/wireplumber/my-rule.lua --user-only --dry-run
 # Confirmed install (writes to $XDG_CONFIG_HOME/wireplumber/wireplumber.conf.d/)
@@ -267,8 +274,8 @@ pipetune profiles validate-db --json
 Profile commands are read-only. No profile is installed, applied, or routed automatically. See [docs/profile-database.md](docs/profile-database.md) and [docs/profile-contribution-guide.md](docs/profile-contribution-guide.md).
 
 ## Roadmap
-- Current: v0.7.0 Device Profile Database and Contribution Workflow Foundation.
-- Next: v0.7.x profile database expansion or v0.8 routing diagnostics.
+- Current: v0.9.2 CI Green and WirePlumber Install Safety Polish.
+- Next: v1.0 Stable Profile Generation.
 
 See [docs/roadmap.md](docs/roadmap.md).
 

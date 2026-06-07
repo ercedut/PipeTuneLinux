@@ -64,6 +64,13 @@ from pipetune.wireplumber.state import (
     run_list_rules,
     run_rule_status,
 )
+from pipetune.wireplumber.guide import render_install_guide, render_install_guide_json
+from pipetune.wireplumber.preflight import (
+    PreflightReport,
+    render_preflight_report,
+    render_preflight_report_json,
+    run_install_preflight,
+)
 from pipetune.wireplumber.integrity import (
     render_cleanup_report,
     render_cleanup_report_json,
@@ -451,6 +458,18 @@ def _build_parser() -> argparse.ArgumentParser:
     cleanup_mode.add_argument("--dry-run", action="store_true")
     cleanup_mode.add_argument("--confirm-cleanup", action="store_true")
     cleanup_rules_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    install_preflight_parser = wireplumber_subparsers.add_parser(
+        "install-preflight",
+        help="Read-only preflight check before running install-rule.",
+    )
+    install_preflight_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    install_guide_parser = wireplumber_subparsers.add_parser(
+        "install-guide",
+        help="Print safe step-by-step workflow for WirePlumber rule installation.",
+    )
+    install_guide_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
 
     route_parser = subparsers.add_parser("route", help="PipeWire routing diagnostics.")
     route_subparsers = route_parser.add_subparsers(dest="route_command")
@@ -1191,6 +1210,23 @@ def _cmd_wireplumber_cleanup_rolled_back(dry_run: bool, confirm_cleanup: bool, j
     return 0 if report.passed else 1
 
 
+def _cmd_wireplumber_install_preflight(json_output: bool) -> int:
+    report = run_install_preflight()
+    if json_output:
+        print(render_preflight_report_json(report))
+    else:
+        print(render_preflight_report(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_wireplumber_install_guide(json_output: bool) -> int:
+    if json_output:
+        print(render_install_guide_json())
+    else:
+        print(render_install_guide())
+    return 0
+
+
 def _cmd_route_recommend(json_output: bool) -> int:
     report = run_route_recommend()
     if json_output:
@@ -1418,6 +1454,10 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_wireplumber_repair_rule_state(args.json)
         if args.wireplumber_command == "cleanup-rolled-back-rules":
             return _cmd_wireplumber_cleanup_rolled_back(args.dry_run, args.confirm_cleanup, args.json)
+        if args.wireplumber_command == "install-preflight":
+            return _cmd_wireplumber_install_preflight(args.json)
+        if args.wireplumber_command == "install-guide":
+            return _cmd_wireplumber_install_guide(args.json)
         parser.print_help()
         return 1
     if args.command == "route":

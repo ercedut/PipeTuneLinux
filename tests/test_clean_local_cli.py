@@ -19,8 +19,8 @@ from pipetune import release as rel
 # ---------------------------------------------------------------------------
 
 
-def test_version_is_091() -> None:
-    assert pipetune.__version__ == "0.9.1"
+def test_version_is_092() -> None:
+    assert pipetune.__version__ == "0.9.2"
 
 
 def test_version_codename_is_wireplumber_or_routing() -> None:

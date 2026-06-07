@@ -145,11 +145,20 @@
 - Manifest-based install tracking, rollback support.
 - No service restart. No routing change. No system config mutation.
 
-## v0.9.1 - WirePlumber Rule Install State Integrity and Recovery (Current)
+## v0.9.1 - WirePlumber Rule Install State Integrity and Recovery (Done)
 - State doctor, verify-rule, dry-run repair, cleanup rolled-back.
 - Duplicate install protection (same checksum already active → refuse).
 - Checksum mismatch detection (rollback refuses mismatched file deletion).
 - Orphan file reporting.
+
+## v0.9.2 - CI Green and WirePlumber Install Safety Polish (Current)
+- Fix CI: remove non-existent Ubuntu package `sord`; `sord-validate` is optional (`|| true`).
+- `pipetune wireplumber install-preflight`: read-only preflight before install-rule.
+- `pipetune wireplumber install-guide`: safe step-by-step workflow for users.
+- Release check gates: CI dependency check and WirePlumber install safety check.
+- Preview artifact hygiene: `previews/wireplumber/*.lua` gitignored.
+- Improved dry-run and confirmed install/rollback safety output.
+- New docs: `wireplumber-rule-install-rollback.md`, `wireplumber-rule-state-integrity.md`.
 
 ## v1.0 - Stable Profile Generation
 - Stable and validated profile generation pipeline for supported devices/stacks.

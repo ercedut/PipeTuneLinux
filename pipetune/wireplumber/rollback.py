@@ -19,6 +19,7 @@ _ROLLBACK_SAFETY_LINES = [
     "No service was restarted.",
     "No audio routing was changed.",
     "No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration was modified beyond the rollback.",
+    "If you had previously reloaded WirePlumber to activate this rule, you must manually reload/restart WirePlumber outside PipeTune for the removal to take effect.",
 ]
 
 
@@ -87,7 +88,7 @@ def run_rollback_rule(
         else:
             warnings.append(f"Installed file not found (already missing): {installed}")
         warnings.append(
-            "Dry run: no files were modified. "
+            "Dry run: no files were removed. No manifest was modified. "
             "Run with --confirm-rollback to rollback."
         )
         return RollbackReport(

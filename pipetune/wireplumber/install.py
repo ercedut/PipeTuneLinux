@@ -211,10 +211,17 @@ def render_install_report(report: InstallReport) -> str:
         lines.extend(["", "Errors:"])
         lines.extend(f"- fail: {e}" for e in report.errors)
     lines.extend(["", f"Final verdict: {report.verdict}", *_INSTALL_SAFETY_LINES])
+    if report.dry_run and report.passed:
+        lines.extend([
+            "",
+            "No file was written. No service was restarted. No routing changed.",
+            f"To confirm install: pipetune wireplumber install-rule {report.source_preview_path} --user-only --confirm-install",
+        ])
     if not report.dry_run and report.passed:
         lines.extend([
             "",
-            f"To rollback: pipetune wireplumber rollback-rule {report.install_id} --dry-run",
+            f"Rollback (dry-run first):  pipetune wireplumber rollback-rule {report.install_id} --dry-run",
+            f"Rollback (confirm):        pipetune wireplumber rollback-rule {report.install_id} --confirm-rollback",
         ])
     return "\n".join(lines)
 

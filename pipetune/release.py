@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 
 import pipetune
@@ -18,6 +19,9 @@ from pipetune.packaging import (
 
 from pipetune.plugin.safeguard import run_metadata_validation, run_rt_safety_validation
 from pipetune.profiles.validator import ProfileDbReport, run_profile_db_validation
+
+_CI_WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+_BARE_SORD_PATTERN = re.compile(r"apt.get install[^#\n]*\bsord\b(?!-validate)")
 
 REQUIRED_FILES = (
     "README.md",
@@ -86,7 +90,35 @@ def run_release_check() -> ReleaseCheckReport:
 
     _merge_profile_db_report(run_profile_db_validation(), checks, warnings, errors)
 
+    _check_ci_no_bare_sord(checks, errors)
+    _check_wireplumber_install_safety(checks, errors)
+
     return ReleaseCheckReport(passed=not errors, checks=checks, warnings=warnings, errors=errors)
+
+
+def _check_ci_no_bare_sord(checks: list[str], errors: list[str]) -> None:
+    """Fail release check if CI workflow installs the non-existent bare 'sord' package."""
+    if not _CI_WORKFLOW_PATH.exists():
+        errors.append("CI workflow .github/workflows/ci.yml not found")
+        return
+    content = _CI_WORKFLOW_PATH.read_text(encoding="utf-8")
+    if _BARE_SORD_PATTERN.search(content):
+        errors.append(
+            "CI workflow installs bare 'sord' package which does not exist on Ubuntu noble; "
+            "remove it and use 'sord-validate || true' instead"
+        )
+    else:
+        checks.append("CI workflow: no bare sord package install")
+
+
+def _check_wireplumber_install_safety(checks: list[str], errors: list[str]) -> None:
+    """Fail release check if WirePlumber install-preflight or install-guide modules are missing."""
+    try:
+        from pipetune.wireplumber import preflight as _pf  # noqa: F401
+        from pipetune.wireplumber import guide as _g  # noqa: F401
+        checks.append("WirePlumber install safety commands: install-preflight and install-guide available")
+    except ImportError as exc:
+        errors.append(f"WirePlumber install safety commands missing: {exc}")
 
 
 def _merge_profile_db_report(
