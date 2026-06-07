@@ -1,0 +1,17 @@
+PipeWire 'pipewire-0' [0.3.71, erce@fedora, cookie:123456789]
+ └─ Clients:
+       31. WirePlumber                         [0.4.15, erce@fedora, pid:1234]
+       32. WirePlumber [export]                [0.4.15, erce@fedora, pid:1234]
+       33. pipewire                            [0.3.71, erce@fedora, pid:1222]
+
+Audio
+ ├─ Devices:
+ │      50. HD-Audio Generic               [alsa]
+ │
+ ├─ Sinks:
+ │  *   51. HD-Audio Generic Analog Stereo  [vol: 0.65]
+ │
+ ├─ Sources:
+ │  *   53. HD-Audio Generic Analog Stereo  [vol: 1.00]
+ │
+ └─ Streams:

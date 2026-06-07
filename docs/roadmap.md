@@ -94,7 +94,7 @@
 - Verify source/wheel readiness without publishing packages.
 - Keep normal verification rootless and non-mutating.
 
-## v0.6.1 - Release Quality Gates and CI Foundation (Current)
+## v0.6.1 - Release Quality Gates and CI Foundation (Done)
 - Add `pipetune package artifact-check` for local and staged artifact hygiene detection.
 - Add `pipetune release check` as a single-command release gate with pass/warn/fail verdict.
 - Add GitHub Actions CI with five jobs: tests, packaging, CLI smoke, artifact hygiene, plugin validation.
@@ -102,7 +102,7 @@
 - Harden `package build-check` to clean up dist/ after inspection.
 - Do not add GUI, daemon behavior, routing, global LV2 install, COPR automation, Flatpak, or DSP features.
 
-## v0.7.0 - Device Profile Database and Contribution Workflow Foundation (Current)
+## v0.7.0 - Device Profile Database and Contribution Workflow Foundation (Done)
 - Community-maintainable profile database for headphones, laptop speakers, microphones, and Bluetooth.
 - Profile metadata schema with quality classes (A/B/C/D), safety statuses, source tracking, and license fields.
 - Profile validation command: `pipetune profiles validate-db`.
@@ -111,6 +111,45 @@
 - Integration with release check and CI pipeline.
 - No auto-apply, no global LV2 install, no audio routing, no system config mutation.
 - Guardrails for non-destructive integration.
+
+## v0.7.1 - Release Gate Cleanup and Profile DB Packaging Hardening (Done)
+- Add `pipetune package clean-local` and `--dry-run` to remove safe local development artifacts.
+- Improve artifact-check to distinguish removable artifacts from forbidden staged artifacts.
+- Harden profile DB packaging: build-check now verifies profile DB exists and is included in MANIFEST.in.
+- Release check recommends `clean-local` when only removable local artifacts are causing warn.
+- After `clean-local`, release check returns `pass`.
+
+## v0.8.0 - WirePlumber and Routing Diagnostics Foundation (Done)
+- Read-only diagnostics for WirePlumber, PipeWire routing state, nodes, and default devices.
+- `pipetune wireplumber audit`, `pipetune route audit`, `pipetune route explain`.
+- No rule generation, no config writes, no service restarts.
+
+## v0.8.1 - WirePlumber Rule Preview and Bluetooth Policy Hardening (Done)
+- Preview-only WirePlumber rule generation (not installed).
+- `pipetune bluetooth policy-audit` for Bluetooth profile diagnostics.
+- `pipetune wireplumber suggest-rule --dry-run --user-only` writes only to repo-local preview paths.
+- `pipetune wireplumber validate-preview` validates preview safety.
+- `pipetune route recommend` provides routing improvement suggestions (read-only).
+
+## v0.8.2 - CI LV2 Validator Dependency Handling Patch (Done)
+- Fix: `lv2_validate` broken-helper failure (e.g., `sord_validate: not found`) is now a `warn` instead of `fail`.
+- Real TTL validation errors still `fail`.
+- CI installs `sord` to provide `sord_validate` alongside `lilv-utils`.
+- CI diagnostic step shows validator tool availability before validation.
+
+## v0.9.0 - User-Level WirePlumber Rule Install/Rollback Foundation (Done)
+- Safe, explicit user-level WirePlumber rule installation from validated previews.
+- `pipetune wireplumber install-rule --user-only --dry-run|--confirm-install`
+- `pipetune wireplumber rollback-rule --dry-run|--confirm-rollback`
+- `pipetune wireplumber rule-status` and `list-rules`
+- Manifest-based install tracking, rollback support.
+- No service restart. No routing change. No system config mutation.
+
+## v0.9.1 - WirePlumber Rule Install State Integrity and Recovery (Current)
+- State doctor, verify-rule, dry-run repair, cleanup rolled-back.
+- Duplicate install protection (same checksum already active → refuse).
+- Checksum mismatch detection (rollback refuses mismatched file deletion).
+- Orphan file reporting.
 
 ## v1.0 - Stable Profile Generation
 - Stable and validated profile generation pipeline for supported devices/stacks.

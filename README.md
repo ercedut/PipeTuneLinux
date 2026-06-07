@@ -2,6 +2,24 @@
 
 PipeTune Linux is a safety-first Linux audio CLI for PipeWire-based systems.
 
+## v0.9.1: WirePlumber Rule Install State Integrity and Recovery
+v0.9.1 adds `pipetune wireplumber rule-state-doctor` (read-only), `verify-rule`, `repair-rule-state --dry-run`, `cleanup-rolled-back-rules`, duplicate install protection, and checksum-mismatch rollback protection. No service is restarted. No routing is changed. See `docs/wireplumber-rule-state-integrity.md`.
+
+## v0.9.0: User-Level WirePlumber Rule Install/Rollback Foundation
+v0.9.0 adds safe, explicit user-level WirePlumber rule installation (`install-rule --user-only --confirm-install`), rollback (`rollback-rule --confirm-rollback`), and manifest-based state tracking. Install requires both `--user-only` and a mode flag. Dry-run writes nothing. No service is restarted. Rule takes effect only after user manually reloads WirePlumber. See `docs/wireplumber-rule-install-rollback.md`.
+
+## v0.8.2: CI LV2 Validator Dependency Handling Patch
+v0.8.2 fixes a CI failure where `lv2_validate` exists but `sord_validate` (its helper) is missing. The failure is now a `warn` instead of `fail`. Real TTL validation errors still fail. CI now installs the `sord` package.
+
+## v0.8.1: WirePlumber Rule Preview and Bluetooth Policy Hardening
+v0.8.1 adds `pipetune bluetooth policy-audit` for Bluetooth profile diagnostics, `pipetune wireplumber suggest-rule --user-only --dry-run` to generate a PREVIEW ONLY rule skeleton (never installed), `pipetune wireplumber validate-preview` to validate preview safety, and `pipetune route recommend` for routing improvement suggestions. All commands are read-only. Rule previews are written only to repo-local `previews/wireplumber/` paths. See [docs/bluetooth-policy-diagnostics.md](docs/bluetooth-policy-diagnostics.md) and [docs/wireplumber-rule-preview.md](docs/wireplumber-rule-preview.md).
+
+## v0.8.0: WirePlumber and Routing Diagnostics Foundation
+v0.8.0 adds read-only WirePlumber, PipeWire routing, and Bluetooth diagnostics. All commands observe and report only — no routing is changed, no services are restarted, no config is written.
+
+## v0.7.1: Release Gate Cleanup and Profile DB Packaging Hardening
+v0.7.1 adds `pipetune package clean-local` to remove safe local development artifacts, improves artifact-check to clearly distinguish removable vs. forbidden artifacts, and hardens profile DB packaging verification. After running `clean-local`, `release check` reliably returns `pass`.
+
 ## v0.7.0: Device Profile Database and Contribution Workflow Foundation
 v0.7.0 adds a community-maintainable device profile database with metadata schema, quality classes, safety validation, and read-only listing/search commands. Profile commands are read-only — no profile is installed or auto-applied.
 
@@ -159,6 +177,8 @@ pipetune package build-check
 pipetune package smoke-test
 pipetune package artifact-check
 pipetune package artifact-check --json
+pipetune package clean-local --dry-run
+pipetune package clean-local
 ```
 
 `package inspect` reports local package metadata and project layout. `package build-check` verifies packaging readiness, runs `python -m build`, inspects archives, and cleans up dist/ after verification. Install the `build` module if missing:
@@ -185,6 +205,53 @@ See [docs/release-checklist.md](docs/release-checklist.md) for the full release 
 - User-level install state is stored under `~/.local/share/pipetune/`.
 - PipeTune does not upload recordings, manifests, or hardware audits.
 - Mixer and hardware audit output can reveal device details; review output before sharing publicly.
+
+## WirePlumber and Routing Diagnostics
+```bash
+pipetune wireplumber audit
+pipetune wireplumber audit --json
+pipetune route audit
+pipetune route audit --json
+pipetune route explain
+pipetune route explain --json
+pipetune route recommend
+pipetune route recommend --json
+```
+
+All commands are read-only. See [docs/wireplumber-routing-diagnostics.md](docs/wireplumber-routing-diagnostics.md).
+
+## WirePlumber Rule Preview and Bluetooth Policy
+```bash
+pipetune bluetooth policy-audit
+pipetune bluetooth policy-audit --json
+pipetune wireplumber suggest-rule --user-only --dry-run
+pipetune wireplumber suggest-rule --user-only --dry-run --output previews/wireplumber/my-rule.lua
+pipetune wireplumber suggest-rule --user-only --dry-run --json
+pipetune wireplumber validate-preview previews/wireplumber/my-rule.lua
+pipetune wireplumber validate-preview previews/wireplumber/my-rule.lua --json
+```
+
+All commands are read-only. Rule previews are PREVIEW ONLY and never installed. See [docs/bluetooth-policy-diagnostics.md](docs/bluetooth-policy-diagnostics.md) and [docs/wireplumber-rule-preview.md](docs/wireplumber-rule-preview.md).
+
+## WirePlumber Rule Install/Rollback (v0.9.0+)
+```bash
+# Dry-run first (always recommended)
+pipetune wireplumber install-rule previews/wireplumber/my-rule.lua --user-only --dry-run
+# Confirmed install (writes to $XDG_CONFIG_HOME/wireplumber/wireplumber.conf.d/)
+pipetune wireplumber install-rule previews/wireplumber/my-rule.lua --user-only --confirm-install
+pipetune wireplumber rule-status
+pipetune wireplumber list-rules
+pipetune wireplumber rollback-rule <install_id> --dry-run
+pipetune wireplumber rollback-rule <install_id> --confirm-rollback
+# State integrity (v0.9.1)
+pipetune wireplumber rule-state-doctor
+pipetune wireplumber verify-rule <install_id>
+pipetune wireplumber repair-rule-state --dry-run
+pipetune wireplumber cleanup-rolled-back-rules --dry-run
+pipetune wireplumber cleanup-rolled-back-rules --confirm-cleanup
+```
+
+No service is restarted. Rule takes effect only after manual WirePlumber reload. See [docs/wireplumber-rule-install-rollback.md](docs/wireplumber-rule-install-rollback.md).
 
 ## Device Profile Database
 ```bash

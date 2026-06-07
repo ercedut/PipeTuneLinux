@@ -15,6 +15,7 @@ from pipetune.packaging import (
     run_package_inspect,
     run_package_smoke_test,
 )
+
 from pipetune.plugin.safeguard import run_metadata_validation, run_rt_safety_validation
 from pipetune.profiles.validator import ProfileDbReport, run_profile_db_validation
 
@@ -63,7 +64,13 @@ def run_release_check() -> ReleaseCheckReport:
     _merge_sub_report("package inspect", run_package_inspect(), checks, warnings, errors)
     _merge_sub_report("package build-check", run_package_build_check(), checks, warnings, errors)
     _merge_sub_report("package smoke-test", run_package_smoke_test(), checks, warnings, errors)
-    _merge_sub_report("package artifact-check", run_package_artifact_check(), checks, warnings, errors)
+    artifact_report = run_package_artifact_check()
+    _merge_sub_report("package artifact-check", artifact_report, checks, warnings, errors)
+    if artifact_report.verdict == "warn" and _only_removable_artifact_warnings(artifact_report.warnings):
+        warnings.append(
+            "removable local development artifacts detected; "
+            "run: pipetune package clean-local then re-run release check"
+        )
 
     metadata_report = run_metadata_validation()
     if metadata_report.passed:
@@ -94,6 +101,16 @@ def _merge_profile_db_report(
         warnings.append("profile database validation: warn — " + "; ".join(report.warnings))
     else:
         errors.append("profile database validation: fail — " + "; ".join(report.errors))
+
+
+_REMOVABLE_ARTIFACT_KEYWORDS = ("egg-info", "clean-local")
+
+
+def _only_removable_artifact_warnings(warnings: list[str]) -> bool:
+    return bool(warnings) and all(
+        any(keyword in w for keyword in _REMOVABLE_ARTIFACT_KEYWORDS)
+        for w in warnings
+    )
 
 
 def _merge_sub_report(

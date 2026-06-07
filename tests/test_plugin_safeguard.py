@@ -300,6 +300,116 @@ def test_plugin_cli_info_validate_and_safety_disclaimers(capsys, monkeypatch) ->
     assert "No audio routing was changed." in rt_output
 
 
+class _FakeProcess:
+    def __init__(self, returncode: int, stdout: str) -> None:
+        self.returncode = returncode
+        self.stdout = stdout
+
+
+def test_classify_lv2_validate_failure_sord_validate_not_found() -> None:
+    result = safeguard._classify_lv2_validate_failure("/usr/bin/lv2_validate: 16: sord_validate: not found")
+    assert result == "missing_helper"
+
+
+def test_classify_lv2_validate_failure_no_such_file() -> None:
+    result = safeguard._classify_lv2_validate_failure("sord_validate: No such file or directory")
+    assert result == "missing_helper"
+
+
+def test_classify_lv2_validate_failure_command_not_found() -> None:
+    result = safeguard._classify_lv2_validate_failure("sord_validate: command not found")
+    assert result == "missing_helper"
+
+
+def test_classify_lv2_validate_failure_actual_ttl_error() -> None:
+    result = safeguard._classify_lv2_validate_failure(
+        "error: lv2:minimum must be a number\nerror: plugin validation failed"
+    )
+    assert result == "actual_failure"
+
+
+def test_classify_lv2_validate_failure_empty_output() -> None:
+    result = safeguard._classify_lv2_validate_failure("")
+    assert result == "actual_failure"
+
+
+def test_metadata_validation_warns_not_fails_for_missing_sord_validate(monkeypatch) -> None:
+    monkeypatch.setattr(safeguard.shutil, "which", lambda command: "/usr/bin/lv2_validate")
+    monkeypatch.setattr(
+        safeguard.subprocess,
+        "run",
+        lambda *args, **kwargs: _FakeProcess(127, "/usr/bin/lv2_validate: 16: sord_validate: not found\n"),
+    )
+
+    report = run_metadata_validation()
+
+    assert report.passed is True
+    assert any("helper dependency is missing" in w for w in report.warnings)
+    assert not report.errors
+
+
+def test_metadata_validation_warns_not_fails_for_no_such_file_helper(monkeypatch) -> None:
+    monkeypatch.setattr(safeguard.shutil, "which", lambda command: "/usr/bin/lv2_validate")
+    monkeypatch.setattr(
+        safeguard.subprocess,
+        "run",
+        lambda *args, **kwargs: _FakeProcess(127, "sord_validate: No such file or directory\n"),
+    )
+
+    report = run_metadata_validation()
+
+    assert report.passed is True
+    assert any("helper dependency is missing" in w for w in report.warnings)
+    assert not report.errors
+
+
+def test_metadata_validation_warns_not_fails_for_command_not_found_helper(monkeypatch) -> None:
+    monkeypatch.setattr(safeguard.shutil, "which", lambda command: "/usr/bin/lv2_validate")
+    monkeypatch.setattr(
+        safeguard.subprocess,
+        "run",
+        lambda *args, **kwargs: _FakeProcess(127, "sord_validate: command not found\n"),
+    )
+
+    report = run_metadata_validation()
+
+    assert report.passed is True
+    assert any("helper dependency is missing" in w for w in report.warnings)
+    assert not report.errors
+
+
+def test_metadata_validation_fails_for_actual_ttl_error(monkeypatch) -> None:
+    monkeypatch.setattr(safeguard.shutil, "which", lambda command: "/usr/bin/lv2_validate")
+    monkeypatch.setattr(
+        safeguard.subprocess,
+        "run",
+        lambda *args, **kwargs: _FakeProcess(1, "error: lv2:minimum must be a number\nerror: plugin validation failed\n"),
+    )
+
+    report = run_metadata_validation()
+
+    assert report.passed is False
+    assert any("lv2_validate failed" in e for e in report.errors)
+    assert not report.warnings or not any("helper dependency" in w for w in report.warnings)
+
+
+def test_metadata_validation_json_includes_warnings_for_missing_helper(monkeypatch) -> None:
+    import json
+
+    monkeypatch.setattr(safeguard.shutil, "which", lambda command: "/usr/bin/lv2_validate")
+    monkeypatch.setattr(
+        safeguard.subprocess,
+        "run",
+        lambda *args, **kwargs: _FakeProcess(127, "/usr/bin/lv2_validate: 16: sord_validate: not found\n"),
+    )
+
+    data = json.loads(render_metadata_validation(run_metadata_validation(), json_output=True))
+
+    assert data["passed"] is True
+    assert data["errors"] == []
+    assert any("helper dependency is missing" in w for w in data["warnings"])
+
+
 def test_plugin_cli_requires_local_and_offline_flags(capsys) -> None:
     build_exit = cli.main(["plugin", "build"])
     build_output = capsys.readouterr().out

@@ -1,0 +1,16 @@
+Card #0
+	Name: alsa_card.pci-0000_00_1f.3
+	Driver: module-alsa-card.c
+	Owner Module: 7
+	Properties:
+		alsa.card = "0"
+		alsa.card_name = "HD-Audio Generic"
+		alsa.driver_name = "snd_hda_intel"
+		device.bus = "pci"
+		device.description = "HD-Audio Generic"
+	Profiles:
+		output:analog-stereo: Analog Stereo Output (sinks: 1, sources: 0, priority: 5900, available: yes)
+		input:analog-stereo: Analog Stereo Input (sinks: 0, sources: 1, priority: 4600, available: yes)
+		output:analog-stereo+input:analog-stereo: Analog Stereo Duplex (sinks: 1, sources: 1, priority: 6800, available: yes)
+		off: Off (sinks: 0, sources: 0, priority: 0, available: yes)
+	Active Profile: output:analog-stereo+input:analog-stereo
