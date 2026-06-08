@@ -567,6 +567,7 @@ def _check_gitignore_patterns(checks: list[str], errors: list[str]) -> None:
         "*.egg-info/",
         "plugins/lv2/**/*.so",
         "plugins/lv2/**/*.o",
+        "previews/wireplumber/*",
     )
     for pattern in required_patterns:
         if pattern in text:

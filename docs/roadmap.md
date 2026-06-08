@@ -151,7 +151,7 @@
 - Checksum mismatch detection (rollback refuses mismatched file deletion).
 - Orphan file reporting.
 
-## v0.9.2 - CI Green and WirePlumber Install Safety Polish (Current)
+## v0.9.2 - CI Green and WirePlumber Install Safety Polish (Done)
 - Fix CI: remove non-existent Ubuntu package `sord`; `sord-validate` is optional (`|| true`).
 - `pipetune wireplumber install-preflight`: read-only preflight before install-rule.
 - `pipetune wireplumber install-guide`: safe step-by-step workflow for users.
@@ -160,9 +160,17 @@
 - Improved dry-run and confirmed install/rollback safety output.
 - New docs: `wireplumber-rule-install-rollback.md`, `wireplumber-rule-state-integrity.md`.
 
-## v1.0 - Stable Profile Generation
-- Stable and validated profile generation pipeline for supported devices/stacks.
-- Documented compatibility matrix and migration path from diagnostics to profile use.
+## v1.0.0-rc1 - Stable Release Candidate and Safety Freeze (Current)
+- RC audit, command matrix, mutation audit, docs check, and Fedora KDE smoke commands.
+- Release check now includes RC mutation audit and docs check as gates.
+- CI updated with RC audit job (`rc-gates`).
+- Version 1.0.0rc1 (PEP 440); display v1.0.0-rc1.
+- Safety boundaries and CLI interface frozen for stable release.
+- New docs: `release-candidate.md`.
+
+## v1.0.0 - Stable (Next)
+- v1.0.0 Stable following successful RC1 validation, Fedora KDE manual smoke testing, and CI green.
+- Safety freeze maintained from v1.0.0-rc1.
 
 ## v2.0 - GUI and Advanced Calibration
 - Optional GUI workflow.

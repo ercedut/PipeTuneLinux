@@ -59,7 +59,7 @@ def test_package_inspect_cli_reports_project_metadata(capsys) -> None:
     assert exit_code == 0
     assert "PipeTune Package Inspect" in output
     assert "package name: pipetune-linux" in output
-    assert "project version: 0.9.2" in output
+    assert "project version: 1.0.0rc1" in output
     assert "CLI entry point configured: yes" in output
     assert "plugin source bundle present: yes" in output
     assert "No PipeWire, WirePlumber, ALSA, service, system, or user audio configuration was modified." in output

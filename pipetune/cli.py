@@ -123,6 +123,19 @@ from pipetune.profiles.validator import (
     render_profile_db_report_json,
     run_profile_db_validation,
 )
+from pipetune.rc.audit import render_rc_audit, render_rc_audit_json, run_rc_audit
+from pipetune.rc.command_matrix import (
+    render_command_matrix,
+    render_command_matrix_json,
+    run_command_matrix,
+)
+from pipetune.rc.docs_check import render_docs_check, render_docs_check_json, run_docs_check
+from pipetune.rc.fedora_smoke import render_fedora_smoke, render_fedora_smoke_json, run_fedora_smoke
+from pipetune.rc.mutation_audit import (
+    render_mutation_audit,
+    render_mutation_audit_json,
+    run_mutation_audit,
+)
 from pipetune.release import (
     render_release_check_json,
     render_release_check_report,
@@ -503,11 +516,44 @@ def _build_parser() -> argparse.ArgumentParser:
     search_parser = profiles_subparsers.add_parser("search", help="Search profiles by keyword.")
     search_parser.add_argument("query", help="Search query.")
 
+    rc_parser = subparsers.add_parser("rc", help="Release-candidate audit and safety tooling.")
+    rc_subparsers = rc_parser.add_subparsers(dest="rc_command")
+
+    rc_audit_parser = rc_subparsers.add_parser(
+        "audit", help="Run comprehensive release-candidate readiness audit (read-only)."
+    )
+    rc_audit_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    rc_matrix_parser = rc_subparsers.add_parser(
+        "command-matrix", help="Print command safety and behavior matrix (read-only)."
+    )
+    rc_matrix_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    rc_mutation_parser = rc_subparsers.add_parser(
+        "mutation-audit", help="Scan source for dangerous mutation patterns (read-only)."
+    )
+    rc_mutation_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    rc_docs_parser = rc_subparsers.add_parser(
+        "docs-check", help="Check documentation integrity and consistency (read-only)."
+    )
+    rc_docs_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
+    rc_smoke_parser = rc_subparsers.add_parser(
+        "fedora-smoke", help="Run non-mutating Fedora KDE smoke test suite (read-only)."
+    )
+    rc_smoke_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON output.")
+
     return parser
 
 
+def _format_display_version(version: str) -> str:
+    import re
+    return re.sub(r"(\d)rc(\d)", r"\1-rc\2", version)
+
+
 def _cmd_version() -> int:
-    print(f"PipeTune Linux v{__version__}")
+    print(f"PipeTune Linux v{_format_display_version(__version__)}")
     print(f"Codename: {CODENAME}")
     return 0
 
@@ -1266,6 +1312,51 @@ def _cmd_profiles_search(query: str) -> int:
     return 0
 
 
+def _cmd_rc_audit(json_output: bool) -> int:
+    report = run_rc_audit()
+    if json_output:
+        print(render_rc_audit_json(report))
+    else:
+        print(render_rc_audit(report))
+    return 0 if report.verdict != "fail" else 1
+
+
+def _cmd_rc_command_matrix(json_output: bool) -> int:
+    report = run_command_matrix()
+    if json_output:
+        print(render_command_matrix_json(report))
+    else:
+        print(render_command_matrix(report))
+    return 0 if report.passed else 1
+
+
+def _cmd_rc_mutation_audit(json_output: bool) -> int:
+    report = run_mutation_audit()
+    if json_output:
+        print(render_mutation_audit_json(report))
+    else:
+        print(render_mutation_audit(report))
+    return 0 if report.verdict != "fail" else 1
+
+
+def _cmd_rc_docs_check(json_output: bool) -> int:
+    report = run_docs_check()
+    if json_output:
+        print(render_docs_check_json(report))
+    else:
+        print(render_docs_check(report))
+    return 0 if report.verdict != "fail" else 1
+
+
+def _cmd_rc_fedora_smoke(json_output: bool) -> int:
+    report = run_fedora_smoke()
+    if json_output:
+        print(render_fedora_smoke_json(report))
+    else:
+        print(render_fedora_smoke(report))
+    return 0 if report.verdict != "fail" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -1483,6 +1574,19 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_profiles_show(args.profile_id)
         if args.profiles_command == "search":
             return _cmd_profiles_search(args.query)
+        parser.print_help()
+        return 1
+    if args.command == "rc":
+        if args.rc_command == "audit":
+            return _cmd_rc_audit(args.json)
+        if args.rc_command == "command-matrix":
+            return _cmd_rc_command_matrix(args.json)
+        if args.rc_command == "mutation-audit":
+            return _cmd_rc_mutation_audit(args.json)
+        if args.rc_command == "docs-check":
+            return _cmd_rc_docs_check(args.json)
+        if args.rc_command == "fedora-smoke":
+            return _cmd_rc_fedora_smoke(args.json)
         parser.print_help()
         return 1
 

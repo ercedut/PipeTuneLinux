@@ -107,3 +107,24 @@ jobs:
         run: pipetune plugin validate --metadata
       - name: Plugin RT-safety validation
         run: pipetune plugin validate --rt-safety
+
+  rc-gates:
+    name: RC audit and safety gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+      - name: RC mutation audit
+        run: pipetune rc mutation-audit --json
+      - name: RC docs check
+        run: pipetune rc docs-check --json
+      - name: RC command matrix
+        run: pipetune rc command-matrix --json
+      - name: RC audit
+        run: pipetune rc audit --json
