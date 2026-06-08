@@ -1,4 +1,4 @@
 """PipeTune Linux package metadata."""
 
-__version__ = "0.9.2"
-CODENAME = "CI Green and WirePlumber Install Safety Polish"
+__version__ = "1.0.0rc1"
+CODENAME = "Stable Release Candidate and Safety Freeze"

@@ -19,6 +19,8 @@ from pipetune.packaging import (
 
 from pipetune.plugin.safeguard import run_metadata_validation, run_rt_safety_validation
 from pipetune.profiles.validator import ProfileDbReport, run_profile_db_validation
+from pipetune.rc.docs_check import run_docs_check
+from pipetune.rc.mutation_audit import run_mutation_audit
 
 _CI_WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 _BARE_SORD_PATTERN = re.compile(r"apt.get install[^#\n]*\bsord\b(?!-validate)")
@@ -92,6 +94,8 @@ def run_release_check() -> ReleaseCheckReport:
 
     _check_ci_no_bare_sord(checks, errors)
     _check_wireplumber_install_safety(checks, errors)
+    _check_rc_mutation_audit(checks, warnings, errors)
+    _check_rc_docs_check(checks, warnings, errors)
 
     return ReleaseCheckReport(passed=not errors, checks=checks, warnings=warnings, errors=errors)
 
@@ -119,6 +123,32 @@ def _check_wireplumber_install_safety(checks: list[str], errors: list[str]) -> N
         checks.append("WirePlumber install safety commands: install-preflight and install-guide available")
     except ImportError as exc:
         errors.append(f"WirePlumber install safety commands missing: {exc}")
+
+
+def _check_rc_mutation_audit(
+    checks: list[str], warnings: list[str], errors: list[str]
+) -> None:
+    """Gate release check on mutation audit: fail if production code has dangerous patterns."""
+    report = run_mutation_audit()
+    if report.verdict == "pass":
+        checks.append("rc mutation-audit: pass")
+    elif report.verdict == "warn":
+        warnings.append("rc mutation-audit: warn — " + "; ".join(report.warnings[:3]))
+    else:
+        errors.append("rc mutation-audit: fail — " + "; ".join(report.errors[:3]))
+
+
+def _check_rc_docs_check(
+    checks: list[str], warnings: list[str], errors: list[str]
+) -> None:
+    """Gate release check on docs integrity check."""
+    report = run_docs_check()
+    if report.verdict == "pass":
+        checks.append("rc docs-check: pass")
+    elif report.verdict == "warn":
+        warnings.append("rc docs-check: warn — " + "; ".join(report.warnings[:3]))
+    else:
+        errors.append("rc docs-check: fail — " + "; ".join(report.errors[:3]))
 
 
 def _merge_profile_db_report(

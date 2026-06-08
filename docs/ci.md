@@ -11,6 +11,7 @@ PipeTune Linux uses GitHub Actions CI to verify every push and pull request befo
 | CLI smoke check | Verifies the installed CLI entry point works |
 | Artifact hygiene | Verifies no forbidden artifacts are staged or committed |
 | Plugin validation | Validates LV2 TTL metadata and RT-safety analysis |
+| RC gates | Runs rc mutation-audit, rc docs-check, rc command-matrix, rc audit |
 
 ## Safe checks
 
@@ -64,6 +65,10 @@ pipetune package artifact-check
 pipetune release check
 pipetune plugin validate --metadata
 pipetune plugin validate --rt-safety
+pipetune rc mutation-audit --json
+pipetune rc docs-check --json
+pipetune rc command-matrix --json
+pipetune rc audit --json
 ```
 
 For LV2 metadata validation, install:

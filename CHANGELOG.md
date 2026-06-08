@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.0.0-rc1] - 2026-06-09
+### Added
+- New `pipetune rc audit` command: comprehensive release-candidate readiness audit covering version metadata, required docs, command groups, safety commands, CI workflow, gitignore patterns, profile DB, LV2 validation, artifact check, forbidden attribution scan, and staged artifact detection. JSON output includes version, codename, collected_at, checks, warnings, errors, verdict, and safety block.
+- New `pipetune rc command-matrix` command: prints a complete command safety and behavior matrix (read_only, writes_repo_local, writes_user_config, requires_confirmation, has_dry_run, json_supported, safety_notes). JSON and table output.
+- New `pipetune rc mutation-audit` command: static scan of production Python source, test files, and docs for dangerous mutation patterns (service restarts, routing mutations, system path writes, sudo). Fails for dangerous patterns in production source; warns for docs/test context. JSON output.
+- New `pipetune rc docs-check` command: checks documentation integrity — required docs exist, README mentions v1.0.0-rc1, CHANGELOG has release section, roadmap marks version as Current, release-checklist mentions required RC checks, internal links resolve, no forbidden attribution text. JSON output.
+- New `pipetune rc fedora-smoke` command: runs non-mutating Fedora KDE smoke test suite. Covers version, doctor, package checks, plugin validation, profile DB, wireplumber audit, route audit, bluetooth audit, install-preflight, rule-state-doctor, release check, and rc audit. Service-optional commands warn rather than fail when live audio hardware is absent. JSON output with safety block.
+- New `docs/release-candidate.md`: describes what v1.0.0-rc1 means, what is frozen, known limitations, required local checks, required CI checks, Fedora KDE smoke procedure, issue reporting, WirePlumber rollback, and safety boundaries.
+- New CI job `rc-gates`: runs `rc mutation-audit --json`, `rc docs-check --json`, `rc command-matrix --json`, `rc audit --json` on every push.
+- `rc mutation-audit` and `rc docs-check` are now gates in `pipetune release check` (fail if either fails).
+- `package build-check` now checks `.gitignore` covers `previews/wireplumber/*`.
+- Version updated to `1.0.0rc1` (PEP 440); display version `v1.0.0-rc1`; codename `Stable Release Candidate and Safety Freeze`.
+- `pyproject.toml` Development Status classifier updated to `4 - Beta`.
+
+### Changed
+- `pipetune version` now prints `PipeTune Linux v1.0.0-rc1`.
+- Roadmap updated: v1.0.0-rc1 marked as Current; v1.0.0 Stable as Next.
+- Release checklist updated with RC audit, mutation audit, fedora smoke, attribution check, and artifact hygiene.
+- README completely rewritten to clearly describe what PipeTune is and is not, with RC notice and current version.
+
+### Safety
+- All new commands are read-only.
+- No service was restarted. No audio routing was changed. No system config was modified.
+- No WirePlumber, PipeWire, ALSA, service, system, or user audio configuration was modified.
+- No LV2 plugin installed globally. No package uploaded.
+
+### Known Limitations
+- `repair-state` is dry-run only; actual state repair is not yet applied.
+- Live audio service queries gracefully degrade when PipeWire/WirePlumber are not running.
+- Bluetooth commands gracefully degrade when no Bluetooth device is present.
+- `sord-validate` is optional for LV2 metadata validation.
+
 ## [0.9.2] - 2026-06-07
 ### Added
 - New `pipetune wireplumber install-preflight` command: read-only preflight check before `install-rule`; reports service status, config directory state, manifest accessibility, existing rule state warnings, and test isolation env var status.
